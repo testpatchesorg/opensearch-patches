@@ -1,0 +1,38 @@
+---
+name: Build patched OpenSearch
+on: 
+  workflow_dispatch:
+    inputs:
+      open-search-tag:
+        type: string
+        required: true
+        description: "Tag in the opensearch-project/OpenSearch repository"
+        default: "3.0.0"
+      patches-dir:
+        type: string
+        description: "Direcory in this repository with patches"
+        required: true
+        default: "patches/3.0.0"
+      tags:
+        type: string
+        description: "Comma separated list of tags to tag produced docker image"
+        required: false
+        default: "custom-patches-3.0.0"
+jobs:
+  build:
+    name: "Apply patches & build"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout OpenSearch"
+        uses: actions/checkout@v5
+        with:
+          repository: opensearch-project/opensearch
+          ref: ${{ inputs.open-search-tag }}
+      - name: "Checkout this repository"
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ inputs.open-search-tag }}
+          path: opensearch-custom-patches
+      - name: "Apply patches"
+      
+      

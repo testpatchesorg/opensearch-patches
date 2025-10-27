@@ -53,13 +53,14 @@ jobs:
       - name: "Run gradlew assemble"
         # run: ./gradlew :distribution:archives:linux-tar:assemble
         run: |
-          sudo apt update && sudo apt upgrade -y
-          sudo apt install -y wget curl software-properties-common
-          wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
-          echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
-          sudo apt update
-          sudo apt install vagrant
-          vagrant plugin install vagrant-vbguest
-          vagrant plugin install vagrant-docker-compose
-          sudo apt install virtualbox virtualbox-dkms virtualbox-qt
-          ./gradlew composeBuild distroTest.docker-arm64 
+          #sudo apt update && sudo apt upgrade -y
+          #sudo apt install -y wget curl software-properties-common
+          #wget -O- https://apt.releases.hashicorp.com/gpg | sudo gpg --dearmor -o /usr/share/keyrings/hashicorp-archive-keyring.gpg
+          #echo "deb [signed-by=/usr/share/keyrings/hashicorp-archive-keyring.gpg] https://apt.releases.hashicorp.com $(lsb_release -cs) main" | sudo tee /etc/apt/sources.list.d/hashicorp.list
+          #sudo apt update
+          #sudo apt install vagrant
+          #vagrant plugin install vagrant-vbguest
+          #vagrant plugin install vagrant-docker-compose
+          #sudo apt install virtualbox virtualbox-dkms virtualbox-qt
+          #./gradlew composeBuild distroTest.docker-arm64 
+          ./gradlew :distribution:docker:build

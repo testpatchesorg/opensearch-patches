@@ -64,3 +64,6 @@ jobs:
           #sudo apt install virtualbox virtualbox-dkms virtualbox-qt
           #./gradlew composeBuild distroTest.docker-arm64 
           ./gradlew :distribution:docker:build
+      - name: List built images
+        run: |
+          docker images | grep opensearch

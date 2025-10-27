@@ -51,4 +51,8 @@ jobs:
           distribution: temurin
           java-version: 21
       - name: "Run gradlew assemble"
-        run: ./gradlew assemble
+        run: ./gradlew :distribution:archives:linux-tar:assemble \
+          -x test \
+          -x integTest \
+          -Dorg.gradle.parallel=true \
+          -Dorg.gradle.caching=false

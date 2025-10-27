@@ -45,10 +45,10 @@ jobs:
       - name: Make Gradle wrapper executable
         run: chmod +x gradlew
 
-#      - name: Set up JDK
-#        uses: actions/setup-java@v4
-#        with:
-#          distribution: temurin
-#          java-version: 21
+      - name: Set up JDK
+        uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: 21
       - name: "Run gradlew assemble"
         run: ./gradlew assemble

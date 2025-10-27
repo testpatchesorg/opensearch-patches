@@ -52,4 +52,4 @@ jobs:
           java-version: 21
       - name: "Run gradlew assemble"
         # run: ./gradlew :distribution:archives:linux-tar:assemble
-        run: ./gradlew :distribution:docker:docker-export
+        run: ./gradlew distroTest.docker-arm64 integTest

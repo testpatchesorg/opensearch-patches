@@ -34,5 +34,21 @@ jobs:
           ref: ${{ inputs.open-search-tag }}
           path: opensearch-custom-patches
       - name: "Apply patches"
-      
-      
+        run: |
+          cd ${GITHUB_WORKSPACE}
+          for p in ./opensearch-custom-patches/${{ inputs.patches-dir }}/*.patch; do
+            echo "Applying $p…"
+            git apply -p1 --ignore-space-change --ignore-whitespace "$p"
+          done
+          rm -rf ./opensearch-custom-patches
+
+      - name: Make Gradle wrapper executable
+        run: chmod +x gradlew
+
+#      - name: Set up JDK
+#        uses: actions/setup-java@v4
+#        with:
+#          distribution: temurin
+#          java-version: 21
+      - name: "Run gradlew assemble"
+        run: ./gradlew assemble

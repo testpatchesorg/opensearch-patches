@@ -18,6 +18,11 @@ on:
         description: "Comma separated list of tags to tag produced docker image"
         required: false
         default: "custom-patches-3.0.0"
+      trigger-qubership-opensearch-build:
+        type: boolean
+        description: "Trigger qubership-opensearch build"
+        default: true
+        required: false
 permissions:
   contents: read
 jobs:
@@ -87,6 +92,7 @@ jobs:
             done
           fi
       - name: "Trigger ${{ github.event.repository.name }}/qubership-opensearch build"
+        if: ${{ inputs.trigger-qubership-opensearch-build }}
         uses: netcracker/qubership-workflow-hub/actions/custom-event@v2.0.1
         with:
           github-token: ${{ secrets.GH_ACCESS_TOKEN }}

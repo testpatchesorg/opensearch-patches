@@ -71,7 +71,9 @@ jobs:
           export OWNER=${GITHUB_REPOSITORY_OWNER,,}
           DEFAULT_CUSTOM_TAG=ghcr.io/${OWNER}/opensearch:${{ inputs.open-search-tag }}-custom
           docker tag opensearch:test ${DEFAULT_CUSTOM_TAG}
+          echo "Pushing opensearch image with default custom tag: ${DEFAULT_CUSTOM_TAG}"
           docker push ${DEFAULT_CUSTOM_TAG}
+          echo "DEFAULT_CUSTOM_TAG=${DEFAULT_CUSTOM_TAG}" >> "$GITHUB_ENV"
           if [[ "${{ inputs.tags }}" != "" ]]; then
             CLEAN_TAGS=$(echo "${{ inputs.tags }}" | tr -d ' ')
             IFS=',' read -ra TAGS <<< "${CLEAN_TAGS}"
@@ -80,6 +82,15 @@ jobs:
             do
               INPUTS_TAG=ghcr.io/${OWNER}/opensearch:${t,,}
               docker tag opensearch:test ${INPUTS_TAG}
+              echo "Pushing opensearch image with custom tag: ${INPUTS_TAG}"
               docker push ${INPUTS_TAG}
             done
           fi
+      - name: "Trigger ${{ github.event.repository.name }}/qubership-opensearch build"
+        uses: netcracker/qubership-workflow-hub/actions/custom-event@v2.0.1
+        with:
+          github-token: ${{ secrets.GH_ACCESS_TOKEN }}
+          owner: ${{ github.repository_owner }}
+          repo: qubership-opensearch
+          event-type: opensearch-patched-build
+          client-payload: '{"custom_opensearch_version": "${{ env.DEFAULT_CUSTOM_TAG }}"}'        

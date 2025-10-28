@@ -18,8 +18,13 @@ on:
         description: "Comma separated list of tags to tag produced docker image"
         required: false
         default: "custom-patches-3.0.0"
+permissions:
+  contents: read
 jobs:
   build:
+    permissions:
+      contents: read
+      packages: write
     name: "Apply patches & build"
     runs-on: ubuntu-latest
     steps:

@@ -129,6 +129,9 @@ jobs:
           path: |
             ${GITHUB_WORKSPACE}/opensearch-build/dist/*
   build-and-push-docker:
+    permissions:
+      contents: read
+      packages: write
     name: "Build and push Docker image"
     needs: build
     runs-on: ubuntu-latest

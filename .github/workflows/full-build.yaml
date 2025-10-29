@@ -69,6 +69,15 @@ jobs:
     needs: apply-patches
     runs-on: ubuntu-latest
     steps:
+      - name: "Set up JDK 21"
+        uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: '21'
+      - name: "Install prerequisites"
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y git wget tar unzip pipenv
       - name: "Checkout opensearch-project/opensearch-build"
         uses: actions/checkout@v5
         with:

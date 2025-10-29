@@ -131,7 +131,7 @@ jobs:
         with:
           name: opensearch-build-artifacts
           path: |
-            ${GITHUB_WORKSPACE}/opensearch-build/dist/*
+            ${GITHUB_WORKSPACE}/opensearch-build/tar/dist/opensearch/*
   build-and-push-docker:
     permissions:
       contents: read

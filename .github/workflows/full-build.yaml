@@ -93,6 +93,7 @@ jobs:
           EOF
           pip install --user pipenv
           sudo apt-get update
+          sudo apt-get upgrade -y
           sudo apt-get install -y git wget tar unzip libblas-dev liblapack-dev gcc-12
 
       - name: "Checkout opensearch-project/opensearch-build"

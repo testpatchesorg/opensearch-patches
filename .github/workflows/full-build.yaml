@@ -118,6 +118,9 @@ jobs:
         run: |
           cd ${GITHUB_WORKSPACE}/opensearch-build
           ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux
+      - name: "Find build manifest"
+        run: |
+          find ${GITHUB_WORKSPACE}/opensearch-build -name "*.yml"
       - name: "Assemble OpenSearch"
         run: |
           cd ${GITHUB_WORKSPACE}/opensearch-build

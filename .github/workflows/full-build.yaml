@@ -28,6 +28,8 @@ permissions:
   contents: read
 jobs:
   apply-patches:
+    permissions:
+      contents: write
     name: "Apply custom patches to OpenSearch"
     runs-on: ubuntu-latest
     steps:

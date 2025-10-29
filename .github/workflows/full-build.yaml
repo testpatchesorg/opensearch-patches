@@ -52,6 +52,8 @@ jobs:
       - name: Create a new branch and commit changes
         run: |
           cd ${GITHUB_WORKSPACE}/opensearch-custom-patches
+          #rm -rf opensearch
+          mv -f ${GITHUB_WORKSPACE}/opensearch/* .
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
           git checkout -b "applied-patches-${{ inputs.open-search-tag }}"

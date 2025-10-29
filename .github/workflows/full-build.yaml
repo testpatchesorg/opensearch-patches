@@ -111,7 +111,7 @@ jobs:
       - name: "Build OpenSearch"
         run: |
           cd ${GITHUB_WORKSPACE}/opensearch-build
-          ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux --architecture x64,arm64
+          ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux
       - name: "Assemble OpenSearch"
         run: |
           cd ${GITHUB_WORKSPACE}/opensearch-build

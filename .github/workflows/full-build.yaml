@@ -95,7 +95,7 @@ jobs:
           cd ${GITHUB_WORKSPACE}/opensearch-build
           ./assemble.sh builds/opensearch/manifest.yml
       - name: "Upload OpenSearch build artifacts"
-        uses: actions/upload-artifact@v3
+        uses: actions/upload-artifact@v5
         with:
           name: opensearch-build-artifacts
           path: |
@@ -112,7 +112,7 @@ jobs:
           ref: main
           path: opensearch-build
       - name: "Download OpenSearch build artifacts"
-        uses: actions/download-artifact@v3
+        uses: actions/download-artifact@v6
         with:
           name: opensearch-build-artifacts
       - name: "Find the OpenSearch tarball"
@@ -130,7 +130,7 @@ jobs:
           chmod +x ./build-image-multi-arch.sh
           ./build-image-multi-arch.sh -v ${{ inputs.open-search-tag }} -f ./dockerfiles/opensearch.al2.dockerfile -p opensearch -a "x64,arm64" -t ${{ steps.find-tarball.outputs.TARFILE }}
       - name: "Login to GitHub Container Registry"
-        uses: docker/login-action@v2
+        uses: docker/login-action@v3
         with:
           registry: ghcr.io
           username: ${{ github.repository_owner }}

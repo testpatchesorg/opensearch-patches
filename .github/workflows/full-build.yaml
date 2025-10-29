@@ -26,6 +26,8 @@ on:
         required: false
 permissions:
   contents: read
+env:
+  custom_branch: "applied-patches-${{ github.event.inputs.open-search-tag }}-${{ github.run_id }}"
 jobs:
   apply-patches:
     permissions:
@@ -58,10 +60,10 @@ jobs:
           mv -f ${GITHUB_WORKSPACE}/opensearch/* .
           git config user.name "$GITHUB_ACTOR"
           git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
-          git checkout -b "applied-patches-${{ inputs.open-search-tag }}"
+          git checkout -b "${{ env.custom_branch }}"
           git add .
           git commit -m "Applied custom patches to OpenSearch ${{ inputs.open-search-tag }}"
-          git push origin "applied-patches-${{ inputs.open-search-tag }}"
+          git push origin "${{ env.custom_branch }}"
   build:
     name: "Build OpenSearch with custom patches"
     needs: apply-patches
@@ -83,7 +85,7 @@ jobs:
           sed -i '
           / *- *name: *OpenSearch/,/^[[:space:]]*-/ {
           s|^\([[:space:]]*\)repository:.*|\1repository: https://github.com/${{ github.repository }}.git|
-          s|^\([[:space:]]*\)ref:.*|\1ref: applied-patches-${{ inputs.open-search-tag }}|
+          s|^\([[:space:]]*\)ref:.*|\1ref: ${{ env.custom_branch }}|
           }
           ' manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml
       - name: "Build OpenSearch"

@@ -124,7 +124,7 @@ jobs:
       - name: "Assemble OpenSearch"
         run: |
           cd ${GITHUB_WORKSPACE}/opensearch-build
-          ./assemble.sh builds/opensearch/manifest.yml
+          ./assemble.sh tar/builds/opensearch/manifest.yml
       - name: "Upload OpenSearch build artifacts"
         uses: actions/upload-artifact@v5
         with:

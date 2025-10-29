@@ -85,8 +85,9 @@ jobs:
           path-exclude /usr/share/man/*
           path-exclude /usr/share/info/*
           EOF
+          pip install --user pipenv
           sudo apt-get update
-          sudo apt-get install -y git wget tar unzip pipenv
+          sudo apt-get install -y git wget tar unzip
 
       - name: "Checkout opensearch-project/opensearch-build"
         uses: actions/checkout@v5

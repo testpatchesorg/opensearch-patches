@@ -65,9 +65,14 @@ jobs:
           git commit -m "Applied custom patches to OpenSearch ${{ inputs.open-search-tag }}"
           git push origin "${{ env.custom_branch }}"
   build:
-    name: "Build OpenSearch with custom patches"
+    strategy:
+      matrix:
+        platform:
+          - ubuntu-22.04
+          - ubuntu-22.04-arm
+    name: "Build OpenSearch with custom patches on ${{ matrix.platform }}"
     needs: apply-patches
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform }}
     steps:
       - name: "Set up JDK 21"
         uses: actions/setup-java@v5

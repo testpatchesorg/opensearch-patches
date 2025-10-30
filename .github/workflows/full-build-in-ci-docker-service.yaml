@@ -75,9 +75,8 @@ jobs:
           - arm64
     services:
       ci-docker:
-        image: opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1
-        options: >-
-          --entrypoint "bash -c \"while true; do sleep 10; done\""
+        image: ghcr.io/qubership/opensearch-ci-docker:latest
+
     steps:
       - name: "Debug: Show current directory and list files"
         run: |

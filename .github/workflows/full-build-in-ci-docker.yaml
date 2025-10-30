@@ -120,9 +120,9 @@ jobs:
         run: |
           cd /home/ci-runner/opensearch-build
           ./assemble.sh tar/builds/opensearch/manifest.yml
-      - name: "Install actions/artifact NPM module"
-        run: |
-          npm install -g @actions/artifact
+      # - name: "Install actions/artifact NPM module"
+      #   run: |
+      #     npm install -g @actions/artifact
       - name: "Upload OpenSearch build artifacts"
         uses: actions/upload-artifact@v5
         with:

@@ -83,7 +83,7 @@ jobs:
           --name ci-docker
           --user ci-runner
           --workdir /home/ci-runner
-          sleep infinity
+          sh -c "sleep infinity"
     steps:
       - name: "Debug: Show current directory and list files"
         run: |

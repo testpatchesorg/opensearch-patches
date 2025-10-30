@@ -76,18 +76,23 @@ jobs:
             architecture: arm64
           - name: ubuntu-latest
             architecture: x64
-    services:
-      ci-docker:
-        image: opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1
-        options: >-
-          --name ci-docker
-          --user ci-runner
-          --workdir /home/ci-runner
-          sh -c "sleep infinity"
     steps:
-      - name: "Debug: Show current directory and list files"
+      - name: Start CI Docker container
         run: |
-          docker ps
+          docker run -d \
+            --name ci-docker \
+            --user ci-runner \
+            --workdir /home/ci-runner \
+            opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
+            sleep infinity
+
+      - name: Wait for container to be ready
+        run: |
+          until docker exec ci-docker true 2>/dev/null; do
+            echo "Waiting for container..."
+            sleep 1
+          done
+          echo "Container is ready!"
       - name: Prepare script to run inside container
         run: |
           mkdir -p ${GITHUB_WORKSPACE}/scripts

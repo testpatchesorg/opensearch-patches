@@ -70,6 +70,7 @@ jobs:
     runs-on: ${{ matrix.platform.name }}
     name: "Build OpenSearch inside CI Docker service on ${{ matrix.platform.name }}"
     strategy:
+      fail-fast: false
       matrix:
         platform:
           - name: ubuntu-22.04-arm

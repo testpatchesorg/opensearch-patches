@@ -135,7 +135,7 @@ jobs:
         with:
           name: opensearch-build-artifacts-${{ matrix.platform }}
           path: |
-            ${GITHUB_WORKSPACE}/opensearch-build/tar/dist/opensearch/*
+            ${GITHUB_WORKSPACE}/opensearch-build/tar/dist/opensearch/*.tar.gz
   build-and-push-docker:
     permissions:
       contents: read

@@ -89,15 +89,16 @@ jobs:
           echo "uname -a: $(uname -a)"
           echo "whoami: $(whoami)"
           echo "HOME: $HOME"
+          ls -la /home/ci-runner
       - name: "Checkout opensearch-project/opensearch-build"
         run: |
-          cd $HOME
+          cd /home/ci-runner
           git clone https://github.com/opensearch-project/opensearch-build.git
       - name: "Modify build configuration to use patched OpenSearch"
         run: |
           export JAVA_HOME=/opt/java/openjdk-21
           echo "PWD: $(pwd)"
-          cd $HOME/opensearch-build
+          cd /home/ci-runner/opensearch-build
           if [ ! -f manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml ]; then
             echo "Error: Build manifest for OpenSearch tag ${{ inputs.open-search-tag }} does not exist."
             exit 1
@@ -110,14 +111,14 @@ jobs:
           ' manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml
       - name: "Build OpenSearch"
         run: |
-          cd $HOME/opensearch-build
+          cd /home/ci-runner/opensearch-build
           ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux -a "${{ matrix.architecture }}"
       - name: "Find build manifest"
         run: |
-          find $HOME/opensearch-build -name "*.yml"
+          find /home/ci-runner/opensearch-build -name "*.yml"
       - name: "Assemble OpenSearch"
         run: |
-          cd $HOME/opensearch-build
+          cd /home/ci-runner/opensearch-build
           ./assemble.sh tar/builds/opensearch/manifest.yml
       - name: "Install actions/artifact NPM module"
         run: |
@@ -127,7 +128,7 @@ jobs:
         with:
           name: opensearch-build-artifacts-${{ matrix.architecture }}
           path: |
-            $HOME/opensearch-build/tar/dist/opensearch/*.tar.gz
+            /home/ci-runner/opensearch-build/tar/dist/opensearch/*.tar.gz
 
 
 

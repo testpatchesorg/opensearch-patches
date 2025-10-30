@@ -111,6 +111,8 @@ jobs:
           ' manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml
       - name: "Build OpenSearch"
         run: |
+          export HOME=/home/ci-runner
+          export JAVA_HOME=/opt/java/openjdk-21
           cd /home/ci-runner/opensearch-build
           ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux -a "${{ matrix.architecture }}"
       - name: "Find build manifest"
@@ -118,6 +120,8 @@ jobs:
           find /home/ci-runner/opensearch-build -name "*.yml"
       - name: "Assemble OpenSearch"
         run: |
+          export HOME=/home/ci-runner
+          export JAVA_HOME=/opt/java/openjdk-21
           cd /home/ci-runner/opensearch-build
           ./assemble.sh tar/builds/opensearch/manifest.yml
       # - name: "Install actions/artifact NPM module"

@@ -1,6 +1,6 @@
 ---
 name: Build patched OpenSearch
-on: 
+on:
   workflow_dispatch:
     inputs:
       open-search-tag:
@@ -99,4 +99,4 @@ jobs:
           owner: ${{ github.repository_owner }}
           repo: qubership-opensearch
           event-type: opensearch-patched-build
-          client-payload: '{"custom_opensearch_version": "${{ env.DEFAULT_CUSTOM_TAG }}"}'        
+          client-payload: '{"custom_opensearch_version": "${{ env.DEFAULT_CUSTOM_TAG }}"}'

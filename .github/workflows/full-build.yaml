@@ -187,7 +187,7 @@ jobs:
       - name: "Build and push Docker image"
         run: |
           cd ${GITHUB_WORKSPACE}/opensearch-build/docker/release
-          chmod +x ./build-image-multi-arch.sh
+          chmod +x ./build-image-single-arch.sh
           ./build-image-single-arch.sh -v ${{ inputs.open-search-tag }} -f ./dockerfiles/opensearch.al2.dockerfile -p opensearch -a "${{ matrix.platform.architecture }}" -t ${{ env.TARFILE }}
       - name: "Login to GitHub Container Registry"
         uses: docker/login-action@v3
@@ -197,11 +197,11 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: "Tag and push additional Docker tags"
         run: |
-          docker tag opensearch:${{ inputs.open-search-tag }} ${{ env.default_custom_tag }}
+          docker tag opensearchproject/opensearch:${{ inputs.open-search-tag }} ${{ env.default_custom_tag }}
           docker push ${{ env.default_custom_tag }}
           IFS=',' read -r -a TAGS_ARRAY <<< "${{ inputs.tags }}"
           for TAG in "${TAGS_ARRAY[@]}"; do
-            docker tag opensearch:${{ inputs.open-search-tag }} ghcr.io/${{ github.repository_owner }}/opensearch:$TAG
+            docker tag opensearchproject/opensearch:${{ inputs.open-search-tag }} ghcr.io/${{ github.repository_owner }}/opensearch:$TAG
             docker push ghcr.io/${{ github.repository_owner }}/opensearch:$TAG
           done
   trigger-qubership-opensearch-build:

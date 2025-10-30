@@ -78,14 +78,13 @@ jobs:
             architecture: x64
     services:
       ci-docker:
-        image: ghcr.io/${{ github.repository_owner }}/opensearch-ci-docker:latest
-
+        image: opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1
+        options: >-
+          --name ci-docker
     steps:
       - name: "Debug: Show current directory and list files"
         run: |
-          container_id=$(docker ps | grep ci-docker | awk '{print $1}')
-          echo "Container ID: $container_id"
-          echo "container_id=$container_id" >> $GITHUB_ENV
+          docker ps
       # - name: "Checkout opensearch-project/opensearch-build"
       #   run: |
       #     cd /home/ci-runner
@@ -155,13 +154,13 @@ jobs:
           """ > ${GITHUB_WORKSPACE}/scripts/run-build.sh
       - name: Run script inside container
         run: |
-          cat ${GITHUB_WORKSPACE}/scripts/run-build.sh | docker exec -i --user ci-runner ${{ env.container_id }} sh -c 'cat > /home/ci-runner/run-build.sh'
-          # docker cp ${GITHUB_WORKSPACE}/scripts/run-build.sh ${{ env.container_id }}:/home/ci-runner/run-build.sh
-          docker exec --user ci-runner ${{ env.container_id }} bash -c "cd /home/ci-runner && chmod +x /home/ci-runner/run-build.sh && /home/ci-runner/run-build.sh"
+          cat ${GITHUB_WORKSPACE}/scripts/run-build.sh | docker exec -i --user ci-runner ci-docker sh -c 'cat > /home/ci-runner/run-build.sh'
+          # docker cp ${GITHUB_WORKSPACE}/scripts/run-build.sh ci-docker:/home/ci-runner/run-build.sh
+          docker exec --user ci-runner ci-docker bash -c "cd /home/ci-runner && chmod +x /home/ci-runner/run-build.sh && /home/ci-runner/run-build.sh"
       - name: Copy build artifacts from container
         run: |
           mkdir -p ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.platform.architecture }}
-          docker cp ${{ env.container_id }}:~/opensearch-build/tar/dist/opensearch/. ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.platform.architecture }}/
+          docker cp ci-docker:~/opensearch-build/tar/dist/opensearch/. ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.platform.architecture }}/
       - name: Upload OpenSearch build artifacts
         uses: actions/upload-artifact@v5
         with:

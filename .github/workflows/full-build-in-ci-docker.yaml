@@ -82,11 +82,9 @@ jobs:
     #       - 8080:8080
     steps:
       - name: "Checkout opensearch-project/opensearch-build"
-        uses: actions/checkout@v5
-        with:
-          repository: opensearch-project/opensearch-build
-          ref: main
-          path: ~/opensearch-build
+        run: |
+          cd ~
+          git clone https://github.com/opensearch-project/opensearch-build.git
       - name: "Modify build configuration to use patched OpenSearch"
         run: |
           export JAVA_HOME=/opt/java/openjdk-21

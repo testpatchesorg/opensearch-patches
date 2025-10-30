@@ -93,11 +93,11 @@ jobs:
           EOF
           pip install --user pipenv
           sudo apt-get update
-          sudo apt-get install -y git wget tar unzip libblas-dev liblapack-dev gcc-12
+          sudo apt-get install -y git wget tar unzip libblas-dev liblapack-dev gcc-13
       - name: "Install prerequisites for x64 build"
         if: matrix.platform == 'ubuntu-22.04'
         run: |
-          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-12 100
+          sudo update-alternatives --install /usr/bin/gcc gcc /usr/bin/gcc-13 100
       - name: "Checkout opensearch-project/opensearch-build"
         uses: actions/checkout@v5
         with:

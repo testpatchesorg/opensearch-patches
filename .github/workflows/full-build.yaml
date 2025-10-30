@@ -101,7 +101,7 @@ jobs:
           if [ "${{ matrix.platform }}" == "ubuntu-22.04-arm" ]; then
             sudo apt-get install -y libblas-dev liblapack-dev
           else
-            sudo apt-get install -y libopenblas-dev libatlas-base-dev
+            sudo apt-get install -y libopenblas-dev libatlas-base-dev gcc-10 g++-10 gfortran-10
           fi
       - name: "Checkout opensearch-project/opensearch-build"
         uses: actions/checkout@v5

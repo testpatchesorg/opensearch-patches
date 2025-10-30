@@ -78,12 +78,12 @@ jobs:
             architecture: x64
     services:
       ci-docker:
-        image: ghcr.io/qubership/opensearch-ci-docker:latest
+        image: ghcr.io/${{ github.repository_owner }}/opensearch-ci-docker:latest
 
     steps:
       - name: "Debug: Show current directory and list files"
         run: |
-          container_id=$(docker ps | grep ci-runner | awk '{print $1}')
+          container_id=$(docker ps | grep ci-docker | awk '{print $1}')
           echo "Container ID: $container_id"
           echo "container_id=$container_id" >> $GITHUB_ENV
       # - name: "Checkout opensearch-project/opensearch-build"

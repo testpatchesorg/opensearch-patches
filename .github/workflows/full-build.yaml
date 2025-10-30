@@ -125,9 +125,9 @@ jobs:
       - name: "Set architecture for build"
         run: |
           if [ "${{ matrix.platform }}" == "ubuntu-22.04-arm" ]; then
-            echo "export BUILD_ARCH=arm64" >> $GITHUB_ENV
+            echo "BUILD_ARCH=arm64" >> $GITHUB_ENV
           else
-            echo "export BUILD_ARCH=x64" >> $GITHUB_ENV
+            echo "BUILD_ARCH=x64" >> $GITHUB_ENV
           fi
       - name: "Build OpenSearch"
         run: |

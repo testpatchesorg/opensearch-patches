@@ -24,7 +24,7 @@ jobs:
       - name: "Build and push CI Docker image"
         uses: docker/build-push-action@v4
         with:
-          context: .
-          file: ./ci-docker/Dockerfile
+          context: ./custom-ci-docker
+          file: ./custom-ci-docker/Dockerfile
           push: true
           tags: ghcr.io/qubership/opensearch-ci-docker:latest

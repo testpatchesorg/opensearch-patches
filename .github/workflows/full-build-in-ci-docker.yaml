@@ -1,0 +1,272 @@
+---
+
+name: "Build full OpenSearch in CI Docker"
+on:
+  workflow_dispatch:
+    inputs:
+      open-search-tag:
+        type: string
+        required: true
+        description: "Tag in the opensearch-project/OpenSearch repository"
+        default: "2.19.3"
+      patches-dir:
+        type: string
+        description: "Direcory in this repository with patches"
+        required: true
+        default: "patches/2.19.3"
+      tags:
+        type: string
+        description: "Comma separated list of tags to tag produced docker image"
+        required: false
+        default: "custom-patches-2.19.3"
+      trigger-qubership-opensearch-build:
+        type: boolean
+        description: "Trigger qubership-opensearch build"
+        default: true
+        required: false
+permissions:
+  contents: read
+env:
+  custom_branch: "applied-patches-${{ github.event.inputs.open-search-tag }}-${{ github.run_id }}"
+jobs:
+  apply-patches:
+    permissions:
+      contents: write
+    name: "Apply custom patches to OpenSearch"
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout OpenSearch"
+        uses: actions/checkout@v5
+        with:
+          repository: opensearch-project/opensearch
+          ref: ${{ inputs.open-search-tag }}
+          path: opensearch
+      - name: "Checkout this repository"
+        uses: actions/checkout@v5
+        with:
+          ref: ${{ github.ref }}
+          path: opensearch-custom-patches
+      - name: "Apply patches"
+        run: |
+          cd ${GITHUB_WORKSPACE}/opensearch
+          for p in ../opensearch-custom-patches/${{ inputs.patches-dir }}/*.patch; do
+            echo "Applying $p…"
+            git apply -p1 --ignore-space-change --ignore-whitespace "$p"
+          done
+      - name: Create a new branch and commit changes
+        run: |
+          cd ${GITHUB_WORKSPACE}/opensearch-custom-patches
+          #rm -rf opensearch
+          mv -f ${GITHUB_WORKSPACE}/opensearch/* .
+          git config user.name "$GITHUB_ACTOR"
+          git config user.email "$GITHUB_ACTOR@users.noreply.github.com"
+          git checkout -b "${{ env.custom_branch }}"
+          git add .
+          git commit -m "Applied custom patches to OpenSearch ${{ inputs.open-search-tag }}"
+          git push origin "${{ env.custom_branch }}"
+
+  build-in-docker:
+    needs: apply-patches
+    runs-on: ubuntu-latest
+    strategy:
+      matrix:
+        architecture:
+          - x64
+          - arm64
+    services:
+          ci-docker:
+            image: opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1
+            ports:
+              - 8080:8080
+    steps:
+      - name: Wait for container to be ready
+        run: |
+          until docker exec ci-docker curl -f http://localhost:8080/health; do
+            echo "Waiting for app..."
+            sleep 2
+          done
+      - name: Prepare script to run inside container
+        run: |
+          echo """
+          #!/bin/bash
+          set -e
+          export JAVA_HOME=/opt/java/openjdk-21
+          git clone https://github.com/opensearch-project/opensearch-build.git
+          cd opensearch-build
+          # Modify build configuration to use patched OpenSearch
+          if [ ! -f manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml ]; then
+            echo "Error: Build manifest for OpenSearch tag ${{ inputs.open-search-tag }} does not exist."
+            exit 1
+          fi
+          sed -i '
+          / *- *name: *OpenSearch/,/^[[:space:]]*-/ {
+          s|^\([[:space:]]*\)repository:.*|\1repository: https://github.com/${{ github.repository }}.git|
+          s|^\([[:space:]]*\)ref:.*|\1ref: ${{ env.custom_branch }}|
+          }
+          ' manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml
+          ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux -a ${{ matrix.architecture }}
+          ./assemble.sh tar/builds/opensearch/manifest.yml
+          """ > ${GITHUB_WORKSPACE}/scripts/run-build.sh
+      - name: Run script inside container
+        run: |
+          docker cp ${GITHUB_WORKSPACE}/scripts/run-build.sh ci-docker:~/run-build.sh
+          docker exec ci-docker bash -c "chmod +x ~/run-build.sh && ~/run-build.sh"
+      - name: Copy build artifacts from container
+        run: |
+          mkdir -p ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.architecture }}
+          docker cp ci-docker:~/opensearch-build/tar/dist/opensearch/. ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.architecture }}/
+      - name: Upload OpenSearch build artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: opensearch-build-artifacts-${{ matrix.architecture }}
+          path: |
+            ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.architecture }}/*.tar.gz
+
+
+
+
+
+#########################################################
+  # build:
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       platform:
+  #         - ubuntu-22.04-arm
+  #         - ubuntu-latest
+  #   name: "Build OpenSearch with custom patches on ${{ matrix.platform }}"
+  #   needs: apply-patches
+  #   runs-on: ${{ matrix.platform }}
+  #   steps:
+  #     - name: "Set up JDK 21"
+  #       uses: actions/setup-java@v5
+  #       with:
+  #         distribution: temurin
+  #         java-version: '21'
+  #     - uses: actions/setup-python@v6
+  #       with:
+  #         python-version: '3.9'
+  #     - name: "Install prerequisites"
+  #       run: |
+  #         # Skip installing package docs {makes the man-db trigger much faster)
+  #         sudo tee /etc/dpkg/dpkg.cfg.d/01_nodoc > /dev/null << 'EOF'
+  #         path-exclude /usr/share/doc/*
+  #         path-exclude /usr/share/man/*
+  #         path-exclude /usr/share/info/*
+  #         EOF
+  #         pip install --user pipenv
+  #         sudo apt-get update
+  #         sudo apt-get install -y git wget tar unzip
+  #         # libblas-dev liblapack-dev
+  #     - name: "Install prerequisites depend on architecture"
+  #       # if: matrix.platform == 'ubuntu-latest'
+  #       run: |
+  #         if [ "${{ matrix.platform }}" == "ubuntu-22.04-arm" ]; then
+  #           sudo apt-get install -y libblas-dev liblapack-dev
+  #         else
+  #           sudo apt-get install -y libopenblas-dev libatlas-base-dev gcc-10 g++-10 gfortran-10
+  #         fi
+  #     - name: "Checkout opensearch-project/opensearch-build"
+  #       uses: actions/checkout@v5
+  #       with:
+  #         repository: opensearch-project/opensearch-build
+  #         ref: main
+  #         path: opensearch-build
+  #     - name: "Modify build configuration to use patched OpenSearch"
+  #       run: |
+  #         cd ${GITHUB_WORKSPACE}/opensearch-build
+  #         if [ ! -f manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml ]; then
+  #           echo "Error: Build manifest for OpenSearch tag ${{ inputs.open-search-tag }} does not exist."
+  #           exit 1
+  #         fi
+  #         sed -i '
+  #         / *- *name: *OpenSearch/,/^[[:space:]]*-/ {
+  #         s|^\([[:space:]]*\)repository:.*|\1repository: https://github.com/${{ github.repository }}.git|
+  #         s|^\([[:space:]]*\)ref:.*|\1ref: ${{ env.custom_branch }}|
+  #         }
+  #         ' manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml
+  #     - name: "Set architecture for build"
+  #       run: |
+  #         if [ "${{ matrix.platform }}" == "ubuntu-22.04-arm" ]; then
+  #           echo "export BUILD_ARCH=arm64" >> $GITHUB_ENV
+  #         else
+  #           echo "export BUILD_ARCH=x64" >> $GITHUB_ENV
+  #         fi
+  #     - name: "Build OpenSearch"
+  #       run: |
+  #         cd ${GITHUB_WORKSPACE}/opensearch-build
+  #         ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux -a "${{ env.BUILD_ARCH }}"
+  #     - name: "Find build manifest"
+  #       run: |
+  #         find ${GITHUB_WORKSPACE}/opensearch-build -name "*.yml"
+  #     - name: "Assemble OpenSearch"
+  #       run: |
+  #         cd ${GITHUB_WORKSPACE}/opensearch-build
+  #         ./assemble.sh tar/builds/opensearch/manifest.yml
+  #     - name: "Upload OpenSearch build artifacts"
+  #       uses: actions/upload-artifact@v5
+  #       with:
+  #         name: opensearch-build-artifacts-${{ matrix.platform }}
+  #         path: |
+  #           ${GITHUB_WORKSPACE}/opensearch-build/tar/dist/opensearch/*.tar.gz
+  # build-and-push-docker:
+  #   permissions:
+  #     contents: read
+  #     packages: write
+  #   strategy:
+  #     fail-fast: false
+  #     matrix:
+  #       platform:
+  #         - ubuntu-22.04-arm
+  #         - ubuntu-latest
+  #   name: "Build and push Docker image for OpenSearch on ${{ matrix.platform }}"
+  #   needs: build
+  #   runs-on: ${{ matrix.platform }}
+  #   steps:
+  #     - name: "Checkout openserch-project/opensearch-build"
+  #       uses: actions/checkout@v5
+  #       with:
+  #         repository: opensearch-project/opensearch-build
+  #         ref: main
+  #         path: opensearch-build
+  #     - name: "Download OpenSearch build artifacts"
+  #       uses: actions/download-artifact@v6
+  #       with:
+  #         name: opensearch-build-artifacts-${{ matrix.platform }}
+  #     - name: "Find the OpenSearch tarball"
+  #       id: find-tarball
+  #       run: |
+  #         TARFILE=$(find ${GITHUB_WORKSPACE}/opensearch-build/tar/dist/ - name opensearch-*.tar.gz | head -n 1)
+  #         if [ -z "$TARFILE" ]; then
+  #           echo "Error: OpenSearch tarball not found!"
+  #           exit 1
+  #         fi
+  #         echo "TARFILE=$TARFILE" >> $GITHUB_ENV
+  #     - name: "Set architecture to build Docker image"
+  #       run: |
+  #         if [ "${{ matrix.platform }}" == "ubuntu-22.04-arm" ]; then
+  #           echo "ARCH=arm64" >> $GITHUB_ENV
+  #         else
+  #           echo "ARCH=x64" >> $GITHUB_ENV
+  #         fi
+  #     - name: "Set up Docker Buildx"
+  #       uses: docker/setup-buildx-action@v3
+
+  #     - name: "Build and push Docker image"
+  #       run: |
+  #         cd ${GITHUB_WORKSPACE}/opensearch-build/docker/release
+  #         chmod +x ./build-image-multi-arch.sh
+  #         ./build-image-single-arch.sh -v ${{ inputs.open-search-tag }} -f ./dockerfiles/opensearch.al2.dockerfile -p opensearch -a "${{ env.ARCH }}" -t ${{ env.TARFILE }}
+  #     - name: "Login to GitHub Container Registry"
+  #       uses: docker/login-action@v3
+  #       with:
+  #         registry: ghcr.io
+  #         username: ${{ github.repository_owner }}
+  #         password: ${{ secrets.GITHUB_TOKEN }}
+  #     - name: "Tag and push additional Docker tags"
+  #       run: |
+  #         IFS=',' read -r -a TAGS_ARRAY <<< "${{ inputs.tags }}"
+  #         for TAG in "${TAGS_ARRAY[@]}"; do
+  #           docker tag opensearch:${{ inputs.open-search-tag }} ghcr.io/${{ github.repository_owner }}/opensearch:$TAG
+  #           docker push ghcr.io/${{ github.repository_owner }}/opensearch:$TAG
+  #         done

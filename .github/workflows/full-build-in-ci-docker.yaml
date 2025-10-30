@@ -73,27 +73,25 @@ jobs:
         architecture:
           - x64
           - arm64
-    services:
-          ci-docker:
-            image: opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1
-            ports:
-              - 8080:8080
+    container:
+      image: opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1
+    # services:
+    #   ci-docker:
+    #     image: opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1
+    #     ports:
+    #       - 8080:8080
     steps:
-      - name: Wait for container to be ready
+      - name: "Checkout opensearch-project/opensearch-build"
+        uses: actions/checkout@v5
+        with:
+          repository: opensearch-project/opensearch-build
+          ref: main
+          path: ~/opensearch-build
+      - name: "Modify build configuration to use patched OpenSearch"
         run: |
-          until docker exec ci-docker curl -f http://localhost:8080/health; do
-            echo "Waiting for app..."
-            sleep 2
-          done
-      - name: Prepare script to run inside container
-        run: |
-          echo """
-          #!/bin/bash
-          set -e
           export JAVA_HOME=/opt/java/openjdk-21
-          git clone https://github.com/opensearch-project/opensearch-build.git
-          cd opensearch-build
-          # Modify build configuration to use patched OpenSearch
+          echo "PWD: $(pwd)"
+          cd ~/opensearch-build
           if [ ! -f manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml ]; then
             echo "Error: Build manifest for OpenSearch tag ${{ inputs.open-search-tag }} does not exist."
             exit 1
@@ -104,23 +102,67 @@ jobs:
           s|^\([[:space:]]*\)ref:.*|\1ref: ${{ env.custom_branch }}|
           }
           ' manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml
-          ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux -a ${{ matrix.architecture }}
+      - name: "Build OpenSearch"
+        run: |
+          cd ~/opensearch-build
+          ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux -a "${{ matrix.architecture }}"
+      - name: "Find build manifest"
+        run: |
+          find ~/opensearch-build -name "*.yml"
+      - name: "Assemble OpenSearch"
+        run: |
+          cd ~/opensearch-build
           ./assemble.sh tar/builds/opensearch/manifest.yml
-          """ > ${GITHUB_WORKSPACE}/scripts/run-build.sh
-      - name: Run script inside container
-        run: |
-          docker cp ${GITHUB_WORKSPACE}/scripts/run-build.sh ci-docker:~/run-build.sh
-          docker exec ci-docker bash -c "chmod +x ~/run-build.sh && ~/run-build.sh"
-      - name: Copy build artifacts from container
-        run: |
-          mkdir -p ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.architecture }}
-          docker cp ci-docker:~/opensearch-build/tar/dist/opensearch/. ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.architecture }}/
-      - name: Upload OpenSearch build artifacts
+      - name: "Upload OpenSearch build artifacts"
         uses: actions/upload-artifact@v5
         with:
           name: opensearch-build-artifacts-${{ matrix.architecture }}
           path: |
-            ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.architecture }}/*.tar.gz
+            ${GITHUB_WORKSPACE}/opensearch-build/tar/dist/opensearch/*.tar.gz
+
+
+
+
+
+
+
+
+      # - name: Prepare script to run inside container
+      #   run: |
+      #     echo """
+      #     #!/bin/bash
+      #     set -e
+      #     export JAVA_HOME=/opt/java/openjdk-21
+      #     git clone https://github.com/opensearch-project/opensearch-build.git
+      #     cd opensearch-build
+      #     # Modify build configuration to use patched OpenSearch
+      #     if [ ! -f manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml ]; then
+      #       echo "Error: Build manifest for OpenSearch tag ${{ inputs.open-search-tag }} does not exist."
+      #       exit 1
+      #     fi
+      #     sed -i '
+      #     / *- *name: *OpenSearch/,/^[[:space:]]*-/ {
+      #     s|^\([[:space:]]*\)repository:.*|\1repository: https://github.com/${{ github.repository }}.git|
+      #     s|^\([[:space:]]*\)ref:.*|\1ref: ${{ env.custom_branch }}|
+      #     }
+      #     ' manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml
+      #     ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux -a ${{ matrix.architecture }}
+      #     ./assemble.sh tar/builds/opensearch/manifest.yml
+      #     """ > ${GITHUB_WORKSPACE}/scripts/run-build.sh
+      # - name: Run script inside container
+      #   run: |
+      #     docker cp ${GITHUB_WORKSPACE}/scripts/run-build.sh ci-docker:~/run-build.sh
+      #     docker exec ci-docker bash -c "chmod +x ~/run-build.sh && ~/run-build.sh"
+      # - name: Copy build artifacts from container
+      #   run: |
+      #     mkdir -p ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.architecture }}
+      #     docker cp ci-docker:~/opensearch-build/tar/dist/opensearch/. ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.architecture }}/
+      # - name: Upload OpenSearch build artifacts
+      #   uses: actions/upload-artifact@v5
+      #   with:
+      #     name: opensearch-build-artifacts-${{ matrix.architecture }}
+      #     path: |
+      #       ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.architecture }}/*.tar.gz
 
 
 

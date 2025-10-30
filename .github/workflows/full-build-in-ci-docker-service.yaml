@@ -155,8 +155,9 @@ jobs:
           """ > ${GITHUB_WORKSPACE}/scripts/run-build.sh
       - name: Run script inside container
         run: |
-          docker cp ${GITHUB_WORKSPACE}/scripts/run-build.sh ${{ env.container_id }}:/home/ci-runner/run-build.sh
-          docker exec ${{ env.container_id }} bash -c "cd /home/ci-runner && chmod +x /home/ci-runner/run-build.sh && /home/ci-runner/run-build.sh"
+          cat ${GITHUB_WORKSPACE}/scripts/run-build.sh | docker exec -i --user ci-runner ${{ env.container_id }} sh -c 'cat > /home/ci-runner/run-build.sh'
+          # docker cp ${GITHUB_WORKSPACE}/scripts/run-build.sh ${{ env.container_id }}:/home/ci-runner/run-build.sh
+          docker exec --user ci-runner ${{ env.container_id }} bash -c "cd /home/ci-runner && chmod +x /home/ci-runner/run-build.sh && /home/ci-runner/run-build.sh"
       - name: Copy build artifacts from container
         run: |
           mkdir -p ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.platform.architecture }}

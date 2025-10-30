@@ -175,7 +175,7 @@ jobs:
       - name: "Find the OpenSearch tarball"
         id: find-tarball
         run: |
-          TARFILE=$(find ${GITHUB_WORKSPACE}/opensearch-build/tar/dist/ - name opensearch-*.tar.gz | head -n 1)
+          TARFILE=$(find ${GITHUB_WORKSPACE}/opensearch-build/tar/dist/ -name opensearch-*.tar.gz | head -n 1)
           if [ -z "$TARFILE" ]; then
             echo "Error: OpenSearch tarball not found!"
             exit 1

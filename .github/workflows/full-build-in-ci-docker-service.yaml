@@ -67,12 +67,15 @@ jobs:
 
   build-in-docker:
     needs: apply-patches
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform.name }}
+    name: "Build OpenSearch inside CI Docker service on ${{ matrix.platform.name }}"
     strategy:
       matrix:
-        architecture:
-          - x64
-          - arm64
+        platform:
+          - name: ubuntu-22.04-arm
+            architecture: arm64
+          - name: ubuntu-latest
+            architecture: x64
     services:
       ci-docker:
         image: ghcr.io/qubership/opensearch-ci-docker:latest
@@ -123,7 +126,7 @@ jobs:
       # - name: "Upload OpenSearch build artifacts"
       #   uses: actions/upload-artifact@v5
       #   with:
-      #     name: opensearch-build-artifacts-${{ matrix.architecture }}
+      #     name: opensearch-build-artifacts-${{ matrix.platform.architecture }}
       #     path: |
       #       /home/ci-runner/opensearch-build/tar/dist/opensearch/*.tar.gz
 
@@ -147,7 +150,7 @@ jobs:
           s|^\([[:space:]]*\)ref:.*|\1ref: ${{ env.custom_branch }}|
           }
           ' manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml
-          ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux -a ${{ matrix.architecture }}
+          ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux -a ${{ matrix.platform.architecture }}
           ./assemble.sh tar/builds/opensearch/manifest.yml
           """ > ${GITHUB_WORKSPACE}/scripts/run-build.sh
       - name: Run script inside container
@@ -156,14 +159,14 @@ jobs:
           docker exec ${{ env.container_id }} bash -c "cd /home/ci-runner && chmod +x /home/ci-runner/run-build.sh && /home/ci-runner/run-build.sh"
       - name: Copy build artifacts from container
         run: |
-          mkdir -p ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.architecture }}
-          docker cp ${{ env.container_id }}:~/opensearch-build/tar/dist/opensearch/. ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.architecture }}/
+          mkdir -p ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.platform.architecture }}
+          docker cp ${{ env.container_id }}:~/opensearch-build/tar/dist/opensearch/. ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.platform.architecture }}/
       - name: Upload OpenSearch build artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: opensearch-build-artifacts-${{ matrix.architecture }}
+          name: opensearch-build-artifacts-${{ matrix.platform.architecture }}
           path: |
-            ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.architecture }}/*.tar.gz
+            ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.platform.architecture }}/*.tar.gz
   build-and-push-docker:
     permissions:
       contents: read
@@ -176,7 +179,7 @@ jobs:
             architecture: arm64
           - name: ubuntu-latest
             architecture: x64
-    name: "Build and push Docker image for OpenSearch on ${{ matrix.platform }}"
+    name: "Build and push Docker image for OpenSearch on ${{ matrix.platform.architecture }}"
     needs: build-in-docker
     runs-on: ${{ matrix.platform.name }}
     steps:
@@ -190,6 +193,7 @@ jobs:
         uses: actions/download-artifact@v6
         with:
           name: opensearch-build-artifacts-${{ matrix.platform.architecture }}
+          path: ${{ github.workspace }}/opensearch-build/tar/dist/
       - name: "Find the OpenSearch tarball"
         id: find-tarball
         run: |

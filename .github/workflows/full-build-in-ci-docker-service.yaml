@@ -77,7 +77,7 @@ jobs:
       ci-docker:
         image: opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1
         options: >-
-          --entrypoint "sleep infinity"
+          --entrypoint "bash -c \"while true; do sleep 10; done\""
     steps:
       - name: "Debug: Show current directory and list files"
         run: |

@@ -132,16 +132,22 @@ jobs:
       - name: "Upload OpenSearch build artifacts"
         uses: actions/upload-artifact@v5
         with:
-          name: opensearch-build-artifacts
+          name: opensearch-build-artifacts-${{ matrix.platform }}
           path: |
             ${GITHUB_WORKSPACE}/opensearch-build/tar/dist/opensearch/*
   build-and-push-docker:
     permissions:
       contents: read
       packages: write
-    name: "Build and push Docker image"
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - ubuntu-22.04-arm
+          - ubuntu-latest
+    name: "Build and push Docker image for OpenSearch on ${{ matrix.platform }}"
     needs: build
-    runs-on: ubuntu-latest
+    runs-on: ${{ matrix.platform }}
     steps:
       - name: "Checkout openserch-project/opensearch-build"
         uses: actions/checkout@v5
@@ -152,21 +158,31 @@ jobs:
       - name: "Download OpenSearch build artifacts"
         uses: actions/download-artifact@v6
         with:
-          name: opensearch-build-artifacts
+          name: opensearch-build-artifacts-${{ matrix.platform }}
       - name: "Find the OpenSearch tarball"
         id: find-tarball
         run: |
-          TARFILE=$(find ${GITHUB_WORKSPACE}/opensearch-build/dist/ - name opensearch-*.tar.gz | head -n 1)
+          TARFILE=$(find ${GITHUB_WORKSPACE}/opensearch-build/tar/dist/ - name opensearch-*.tar.gz | head -n 1)
           if [ -z "$TARFILE" ]; then
             echo "Error: OpenSearch tarball not found!"
             exit 1
           fi
-          echo "TARFILE=$TARFILE" >> $GITHUB_OUTPUT
+          echo "TARFILE=$TARFILE" >> $GITHUB_ENV
+      - name: "Set architecture to build Docker image"
+        run: |
+          if [ "${{ matrix.platform }}" == "ubuntu-22.04-arm" ]; then
+            echo "ARCH=arm64" >> $GITHUB_ENV
+          else
+            echo "ARCH=x64" >> $GITHUB_ENV
+          fi
+      - name: "Set up Docker Buildx"
+        uses: docker/setup-buildx-action@v3
+
       - name: "Build and push Docker image"
         run: |
           cd ${GITHUB_WORKSPACE}/opensearch-build/docker/release
           chmod +x ./build-image-multi-arch.sh
-          ./build-image-multi-arch.sh -v ${{ inputs.open-search-tag }} -f ./dockerfiles/opensearch.al2.dockerfile -p opensearch -a "x64,arm64" -t ${{ steps.find-tarball.outputs.TARFILE }}
+          ./build-image-single-arch.sh -v ${{ inputs.open-search-tag }} -f ./dockerfiles/opensearch.al2.dockerfile -p opensearch -a "${{ env.ARCH }}" -t ${{ env.TARFILE }}
       - name: "Login to GitHub Container Registry"
         uses: docker/login-action@v3
         with:

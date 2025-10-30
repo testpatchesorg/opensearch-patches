@@ -122,10 +122,17 @@ jobs:
           s|^\([[:space:]]*\)ref:.*|\1ref: ${{ env.custom_branch }}|
           }
           ' manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml
+      - name: "Set architecture for build"
+        run: |
+          if [ "${{ matrix.platform }}" == "ubuntu-22.04-arm" ]; then
+            echo "export BUILD_ARCH=arm64" >> $GITHUB_ENV
+          else
+            echo "export BUILD_ARCH=x64" >> $GITHUB_ENV
+          fi
       - name: "Build OpenSearch"
         run: |
           cd ${GITHUB_WORKSPACE}/opensearch-build
-          ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux
+          ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux -a "${{ env.BUILD_ARCH }}"
       - name: "Find build manifest"
         run: |
           find ${GITHUB_WORKSPACE}/opensearch-build -name "*.yml"

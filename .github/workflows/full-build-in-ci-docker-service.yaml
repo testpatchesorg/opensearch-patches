@@ -128,6 +128,7 @@ jobs:
 
       - name: Prepare script to run inside container
         run: |
+          mkdir -p ${GITHUB_WORKSPACE}/scripts
           echo """
           #!/bin/bash
           set -e

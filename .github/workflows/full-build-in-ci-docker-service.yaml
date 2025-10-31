@@ -78,11 +78,22 @@ jobs:
           - name: ubuntu-24.04
             architecture: x64
     steps:
-      - name: Remove unnecessary files
-        run: |
-          sudo rm -rf /usr/share/dotnet
-          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-          sudo docker rmi $(docker image ls -aq) >/dev/null 2>&1 || true
+      # - name: Remove unnecessary files
+      #   run: |
+      #     sudo rm -rf /usr/share/dotnet
+      #     sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+      #     sudo docker rmi $(docker image ls -aq) >/dev/null 2>&1 || true
+
+      - name: Free Disk Space (Ubuntu)
+        uses: jlumbroso/free-disk-space@main
+        with:
+          tool-cache: true
+          android: true
+          dotnet: true
+          haskell: true
+          large-packages: true
+          docker-images: true
+          swap-storage: true
       - name: Start CI Docker container
         run: |
           docker run -d \
@@ -135,9 +146,7 @@ jobs:
           mkdir -p ${GITHUB_WORKSPACE}/scripts
           echo """
           #!/bin/bash
-          # set -e
           export JAVA_HOME=/opt/java/openjdk-21
-          # cd /home/ci-runner/opensearch
           git clone https://github.com/opensearch-project/opensearch-build.git
           cd opensearch-build
           # Modify build configuration to use patched OpenSearch
@@ -151,7 +160,6 @@ jobs:
           s|^\([[:space:]]*\)ref:.*|\1ref: ${{ env.custom_branch }}|
           }
           ' manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml
-          echo "org.gradle.daemon=false" >> gradle.properties
           ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux -a ${{ matrix.platform.architecture }}
           ./assemble.sh tar/builds/opensearch/manifest.yml
           """ > ${GITHUB_WORKSPACE}/scripts/run-build.sh
@@ -159,7 +167,6 @@ jobs:
       - name: Run build & assemble scripts inside container
         run: |
           cat ${GITHUB_WORKSPACE}/scripts/run-build.sh | docker exec -i --user ci-runner ci-docker sh -c 'cat > /home/ci-runner/run-build.sh'
-          #docker cp ${GITHUB_WORKSPACE}/scripts/run-build.sh ci-docker:/home/ci-runner/run-build.sh
           docker exec --user ci-runner ci-docker bash -c "cd /home/ci-runner && chmod +x /home/ci-runner/run-build.sh && /home/ci-runner/run-build.sh"
       - name: Copy build artifacts from container
         run: |

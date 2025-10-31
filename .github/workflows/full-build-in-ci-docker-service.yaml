@@ -78,6 +78,11 @@ jobs:
           - name: ubuntu-24.04
             architecture: x64
     steps:
+      - name: Remove unnecessary files
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+          sudo docker rmi $(docker image ls -aq) >/dev/null 2>&1 || true
       - name: Start CI Docker container
         run: |
           docker run -d \

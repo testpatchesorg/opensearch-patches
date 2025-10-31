@@ -92,6 +92,7 @@ jobs:
             sleep 1
           done
           echo "Container is ready!"
+          docker exec --user ci-runner ci-docker bash -c "cd /home/ci-runner && ls -laR"
       - name: Prepare script to run inside container
         run: |
           mkdir -p ${GITHUB_WORKSPACE}/scripts

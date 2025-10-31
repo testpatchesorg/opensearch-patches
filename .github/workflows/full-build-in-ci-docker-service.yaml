@@ -19,6 +19,16 @@ on:
         description: "Comma separated list of tags to tag produced docker image"
         required: false
         default: "custom-patches-2.19.3"
+      integration-tests:
+        type: boolean
+        description: "Whether to trigger opensearch integration tests (may take a while)"
+        required: false
+        default: false
+      docker-test:
+        type: boolean
+        description: "Whether to run docker image tests after build"
+        required: false
+        default: true
       trigger-qubership-opensearch-build:
         type: boolean
         description: "Trigger qubership-opensearch build"
@@ -28,6 +38,8 @@ permissions:
   contents: read
 env:
   custom_branch: "applied-patches-${{ github.event.inputs.open-search-tag }}-${{ github.run_id }}"
+  default_custom_tag: "ghcr.io/${{ github.repository_owner }}/opensearch:${{ github.event.inputs.open-search-tag }}-custom-patches"
+
 jobs:
   apply-patches:
     permissions:
@@ -78,12 +90,6 @@ jobs:
           - name: ubuntu-24.04
             architecture: x64
     steps:
-      # - name: Remove unnecessary files
-      #   run: |
-      #     sudo rm -rf /usr/share/dotnet
-      #     sudo rm -rf "$AGENT_TOOLSDIRECTORY"
-      #     sudo docker rmi $(docker image ls -aq) >/dev/null 2>&1 || true
-
       - name: Free Disk Space (Ubuntu)
         uses: jlumbroso/free-disk-space@main
         with:
@@ -100,29 +106,6 @@ jobs:
             --name ci-docker \
             opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
             sleep infinity
-
-      # - name: Start CI Docker container
-      #   run: |
-      #     docker run -d --name ci-docker --user ci-runner --workdir /home/ci-runner \
-      #     -v ${{ github.workspace }}:/home/ci-runner/opensearch \
-      #     opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
-      #     sleep infinity
-
-      # - name: Start CI Docker container
-      #   run: |
-      #     mkdir -p /tmp/ci-tmp
-
-      #         docker run -d \
-      #           --name ci-docker \
-      #           --user ci-runner \
-      #           --workdir /home/ci-runner \
-      #           -v ${{ github.workspace }}:/home/ci-runner/opensearch \
-      #           -v /tmp/ci-tmp:/tmp \
-      #           opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
-      #           sleep infinity
-
-      #         # docker exec --user ci-runner ci-docker chown -R ci-runner:ci-runner /home/ci-runner
-      #         # docker exec --user ci-runner ci-docker chown -R ci-runner:ci-runner /tmp
 
       - name: Wait for container to be ready
         run: |
@@ -178,6 +161,11 @@ jobs:
           name: opensearch-build-artifacts-${{ matrix.platform.architecture }}
           path: |
             ${{ github.workspace }}/build-artifacts/${{ matrix.platform.architecture }}/*.tar.gz
+      - name: Execute integration tests (optional)
+        if: ${{ inputs.integration-tests }}
+        run: |
+          echo "Triggering opensearch integration tests..."
+          docker exec --user ci-runner ci-docker bash -c "cd /home/ci-runner/opensearch-build && mv -rf tar/* . && ./test.sh integ-test manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}-test.yml"
   build-and-push-docker:
     permissions:
       contents: read
@@ -230,8 +218,43 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: "Tag and push additional Docker tags"
         run: |
+          docker tag opensearchproject/opensearch:${{ inputs.open-search-tag }} ${{ env.default_custom_tag }}
+          docker push ${{ env.default_custom_tag }}
           IFS=',' read -r -a TAGS_ARRAY <<< "${{ inputs.tags }}"
           for TAG in "${TAGS_ARRAY[@]}"; do
             docker tag opensearch:${{ inputs.open-search-tag }} ghcr.io/${{ github.repository_owner }}/opensearch:$TAG-${{ matrix.platform.architecture }}
             docker push ghcr.io/${{ github.repository_owner }}/opensearch:$TAG-${{ matrix.platform.architecture }}
           done
+  docker-image-tests:
+    name: "Docker Image Tests"
+    needs: build-and-push-docker
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Pull and test Docker image"
+        run: |
+          if [ "${{ inputs.docker-test }}" != "true" ]; then
+            echo "Docker tests are disabled. Skipping."
+            exit 0
+          fi
+          echo "Running tests on Docker image ${{ env.default_custom_tag }}..."
+          docker run -d --rm --name ops-test -p 9200:9200 -p 9600:9600 -e OPENSEARCH_INITIAL_ADMIN_PASSWORD=InItIaL$tr0ngPa$$w0rd -e "discovery.type=single-node" ${{ env.default_custom_tag }}
+          sleep 120
+          docker logs ops-test | grep "Cluster health status changed from \[YELLOW\] to \[GREEN\]"
+          echo "Docker image test passed successfully."
+          docker stop ops-test
+
+  trigger-qubership-opensearch-build:
+    if: ${{ inputs.trigger-qubership-opensearch-build == true }}
+    name: "Trigger qubership-opensearch build"
+    needs: [build-and-push-docker, docker-image-tests]
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Trigger ${{ github.event.repository.name }}/qubership-opensearch build"
+        if: ${{ inputs.trigger-qubership-opensearch-build }}
+        uses: netcracker/qubership-workflow-hub/actions/custom-event@v2.0.1
+        with:
+          github-token: ${{ secrets.GH_ACCESS_TOKEN }}
+          owner: ${{ github.repository_owner }}
+          repo: qubership-opensearch
+          event-type: opensearch-patched-build
+          client-payload: '{"custom_opensearch_version": "${{ env.default_custom_tag }}", "custom_branch": "${{ env.custom_branch }}"}'

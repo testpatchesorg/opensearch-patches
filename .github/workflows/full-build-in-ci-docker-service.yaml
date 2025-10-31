@@ -78,12 +78,12 @@ jobs:
           - name: ubuntu-24.04
             architecture: x64
     steps:
-      # - name: Start CI Docker container
-      #   run: |
-      #     docker run -d \
-      #       --name ci-docker \
-      #       opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
-      #       sleep infinity
+      - name: Start CI Docker container
+        run: |
+          docker run -d \
+            --name ci-docker \
+            opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
+            sleep infinity
 
       # - name: Start CI Docker container
       #   run: |
@@ -92,21 +92,21 @@ jobs:
       #     opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
       #     sleep infinity
 
-      - name: Start CI Docker container
-        run: |
-          mkdir -p /tmp/ci-tmp
+      # - name: Start CI Docker container
+      #   run: |
+      #     mkdir -p /tmp/ci-tmp
 
-              docker run -d \
-                --name ci-docker \
-                --user ci-runner \
-                --workdir /home/ci-runner \
-                -v ${{ github.workspace }}:/home/ci-runner/opensearch \
-                -v /tmp/ci-tmp:/tmp \
-                opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
-                sleep infinity
+      #         docker run -d \
+      #           --name ci-docker \
+      #           --user ci-runner \
+      #           --workdir /home/ci-runner \
+      #           -v ${{ github.workspace }}:/home/ci-runner/opensearch \
+      #           -v /tmp/ci-tmp:/tmp \
+      #           opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
+      #           sleep infinity
 
-              # docker exec --user ci-runner ci-docker chown -R ci-runner:ci-runner /home/ci-runner
-              # docker exec --user ci-runner ci-docker chown -R ci-runner:ci-runner /tmp
+      #         # docker exec --user ci-runner ci-docker chown -R ci-runner:ci-runner /home/ci-runner
+      #         # docker exec --user ci-runner ci-docker chown -R ci-runner:ci-runner /tmp
 
       - name: Wait for container to be ready
         run: |
@@ -115,7 +115,7 @@ jobs:
             sleep 1
           done
           echo "Container is ready!"
-          docker exec --user ci-runner ci-docker bash -c "cd /home/ci-runner && mkdir -p /home/ci-runner/.gradle/caches && rm -rf /home/ci-runner/.gradle/caches/* && ls -laR /home/ci-runner/.gradle"
+          # docker exec --user ci-runner ci-docker bash -c "cd /home/ci-runner && mkdir -p /home/ci-runner/.gradle/caches && rm -rf /home/ci-runner/.gradle/caches/* && ls -laR /home/ci-runner/.gradle"
 
       - name: Debug disk space
         run: |
@@ -153,13 +153,13 @@ jobs:
           cat ${GITHUB_WORKSPACE}/scripts/run-build.sh
       - name: Run build & assemble scripts inside container
         run: |
-          cat ${GITHUB_WORKSPACE}/scripts/run-build.sh | docker exec -i --user ci-runner ci-docker sh -c 'cat > /home/ci-runner/opensearch/run-build.sh'
+          cat ${GITHUB_WORKSPACE}/scripts/run-build.sh | docker exec -i --user ci-runner ci-docker sh -c 'cat > /home/ci-runner/run-build.sh'
           #docker cp ${GITHUB_WORKSPACE}/scripts/run-build.sh ci-docker:/home/ci-runner/run-build.sh
-          docker exec --user ci-runner ci-docker bash -c "cd /home/ci-runner/opensearch && chmod +x /home/ci-runner/opensearch/run-build.sh && /home/ci-runner/opensearch/run-build.sh"
+          docker exec --user ci-runner ci-docker bash -c "cd /home/ci-runner/opensearch && chmod +x /home/ci-runner/run-build.sh && /home/ci-runner/run-build.sh"
       - name: Copy build artifacts from container
         run: |
           mkdir -p ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.platform.architecture }}
-          docker cp ci-docker:/home/ci-runner/opensearch/opensearch-build/tar/dist/opensearch/. ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.platform.architecture }}/
+          docker cp ci-docker:/home/ci-runner/opensearch-build/tar/dist/opensearch/. ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.platform.architecture }}/
       - name: Upload OpenSearch build artifacts
         uses: actions/upload-artifact@v5
         with:

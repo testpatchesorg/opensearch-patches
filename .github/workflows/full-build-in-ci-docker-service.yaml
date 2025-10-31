@@ -1,6 +1,6 @@
 ---
 
-name: "Build full OpenSearch in CI Docker Service"
+name: "Build OpenSearch in CI Docker"
 on:
   workflow_dispatch:
     inputs:
@@ -68,14 +68,14 @@ jobs:
   build-in-docker:
     needs: apply-patches
     runs-on: ${{ matrix.platform.name }}
-    name: "Build OpenSearch inside CI Docker service on ${{ matrix.platform.name }}"
+    name: "${{ matrix.platform.architecture }} Build OpenSearch on ${{ matrix.platform.name }}"
     strategy:
       fail-fast: false
       matrix:
         platform:
           - name: ubuntu-22.04-arm
             architecture: arm64
-          - name: ubuntu-latest
+          - name: ubuntu-22.04
             architecture: x64
     steps:
       - name: Start CI Docker container
@@ -113,14 +113,12 @@ jobs:
           s|^\([[:space:]]*\)ref:.*|\1ref: ${{ env.custom_branch }}|
           }
           ' manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml
-          echo "org.gradle.caching=false" >> gradle.properties
           echo "org.gradle.daemon=false" >> gradle.properties
-          #./gradlew clean
           ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux -a ${{ matrix.platform.architecture }}
           ./assemble.sh tar/builds/opensearch/manifest.yml
           """ > ${GITHUB_WORKSPACE}/scripts/run-build.sh
           cat ${GITHUB_WORKSPACE}/scripts/run-build.sh
-      - name: Run script inside container
+      - name: Run build & assemble scripts inside container
         run: |
           cat ${GITHUB_WORKSPACE}/scripts/run-build.sh | docker exec -i --user ci-runner ci-docker sh -c 'cat > /home/ci-runner/run-build.sh'
           #docker cp ${GITHUB_WORKSPACE}/scripts/run-build.sh ci-docker:/home/ci-runner/run-build.sh

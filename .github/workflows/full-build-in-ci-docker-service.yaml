@@ -155,7 +155,7 @@ jobs:
         run: |
           cat ${GITHUB_WORKSPACE}/scripts/run-build.sh | docker exec -i --user ci-runner ci-docker sh -c 'cat > /home/ci-runner/run-build.sh'
           #docker cp ${GITHUB_WORKSPACE}/scripts/run-build.sh ci-docker:/home/ci-runner/run-build.sh
-          docker exec --user ci-runner ci-docker bash -c "cd /home/ci-runner/opensearch && chmod +x /home/ci-runner/run-build.sh && /home/ci-runner/run-build.sh"
+          docker exec --user ci-runner ci-docker bash -c "cd /home/ci-runner && chmod +x /home/ci-runner/run-build.sh && /home/ci-runner/run-build.sh"
       - name: Copy build artifacts from container
         run: |
           mkdir -p ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.platform.architecture }}

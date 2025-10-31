@@ -113,7 +113,9 @@ jobs:
           s|^\([[:space:]]*\)ref:.*|\1ref: ${{ env.custom_branch }}|
           }
           ' manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml
-          #echo "org.gradle.caching=false" >> gradle.properties
+          echo "org.gradle.caching=false" >> gradle.properties
+          ech "org.gradle.daemon=false" >> gradle.properties
+          ./gradlew clean
           ./build.sh manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}.yml --platform linux -a ${{ matrix.platform.architecture }}
           ./assemble.sh tar/builds/opensearch/manifest.yml
           """ > ${GITHUB_WORKSPACE}/scripts/run-build.sh

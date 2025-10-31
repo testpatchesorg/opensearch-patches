@@ -85,12 +85,28 @@ jobs:
       #       opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
       #       sleep infinity
 
+      # - name: Start CI Docker container
+      #   run: |
+      #     docker run -d --name ci-docker --user ci-runner --workdir /home/ci-runner \
+      #     -v ${{ github.workspace }}:/home/ci-runner/opensearch \
+      #     opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
+      #     sleep infinity
+
       - name: Start CI Docker container
         run: |
-          docker run -d --name ci-docker --user ci-runner --workdir /home/ci-runner \
-          -v ${{ github.workspace }}:/home/ci-runner/opensearch \
-          opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
-          sleep infinity
+          mkdir -p /tmp/ci-tmp
+
+              docker run -d \
+                --name ci-docker \
+                --user ci-runner \
+                --workdir /home/ci-runner \
+                -v ${{ github.workspace }}:/home/ci-runner/opensearch \
+                -v /tmp/ci-tmp:/tmp \
+                opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
+                sleep infinity
+
+              docker exec ci-docker chown -R ci-runner:ci-runner /home/ci-runner/opensearch
+              docker exec ci-docker chown -R ci-runner:ci-runner /tmp
 
       - name: Wait for container to be ready
         run: |
@@ -100,6 +116,15 @@ jobs:
           done
           echo "Container is ready!"
           docker exec --user ci-runner ci-docker bash -c "cd /home/ci-runner && mkdir -p /home/ci-runner/.gradle/caches && rm -rf /home/ci-runner/.gradle/caches/* && ls -laR /home/ci-runner/.gradle"
+
+      - name: Debug disk space
+        run: |
+          echo "=== Runner disk ==="
+          df -h
+
+          echo "=== Inside container ==="
+          docker exec ci-docker df -h / /tmp /home/ci-runner
+
       - name: Prepare script to run inside container
         run: |
           mkdir -p ${GITHUB_WORKSPACE}/scripts

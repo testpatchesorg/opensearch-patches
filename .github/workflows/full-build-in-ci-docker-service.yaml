@@ -78,12 +78,19 @@ jobs:
           - name: ubuntu-22.04
             architecture: x64
     steps:
+      # - name: Start CI Docker container
+      #   run: |
+      #     docker run -d \
+      #       --name ci-docker \
+      #       opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
+      #       sleep infinity
+
       - name: Start CI Docker container
         run: |
-          docker run -d \
-            --name ci-docker \
-            opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
-            sleep infinity
+          docker run -d --name ci-docker --user ci-runner --workdir /home/ci-runner \
+          -v ${{ github.workspace }}:/home/ci-runner/opensearch \
+          opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
+          sleep infinity
 
       - name: Wait for container to be ready
         run: |

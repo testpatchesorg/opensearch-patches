@@ -105,8 +105,8 @@ jobs:
                 opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
                 sleep infinity
 
-              docker exec --user ci-runner ci-docker chown -R ci-runner:ci-runner /home/ci-runner
-              docker exec --user ci-runner ci-docker chown -R ci-runner:ci-runner /tmp
+              # docker exec --user ci-runner ci-docker chown -R ci-runner:ci-runner /home/ci-runner
+              # docker exec --user ci-runner ci-docker chown -R ci-runner:ci-runner /tmp
 
       - name: Wait for container to be ready
         run: |

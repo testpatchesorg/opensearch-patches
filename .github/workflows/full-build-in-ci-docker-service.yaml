@@ -82,8 +82,6 @@ jobs:
         run: |
           docker run -d \
             --name ci-docker \
-            --user ci-runner \
-            --workdir /home/ci-runner \
             opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
             sleep infinity
 

@@ -35,12 +35,14 @@ jobs:
       - name: "Find the OpenSearch tarball"
         id: find-tarball
         run: |
-          TARFILE=$(find "${GITHUB_WORKSPACE}/opensearch-build/tar/dist/" -name 'opensearch-*.tar.gz' | sort | paste -sd, -)
+          cd ${GITHUB_WORKSPACE}
+          TARFILE=$(find "./opensearch-build/tar/dist/" -name 'opensearch-*.tar.gz' | sort | xargs | sed 's/ /, /g')
           if [ -z "$TARFILE" ]; then
             echo "Error: OpenSearch tarball not found!"
             exit 1
           fi
           echo "TARFILE=$TARFILE" >> $GITHUB_ENV
+          echo "Found tarball(s): $TARFILE"
       - name: "Setup QEMU"
         uses: docker/setup-qemu-action@v3
         with:

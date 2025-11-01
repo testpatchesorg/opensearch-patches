@@ -1,0 +1,92 @@
+name: "Reusable Docker Build Workflow"
+permissions:
+  contents: read
+on:
+  workflow_call:
+    inputs:
+        open-search-tag:
+            type: string
+            required: true
+            description: "Tag in the opensearch-project/OpenSearch repository"
+        docker-test:
+            type: boolean
+            description: "Whether to run docker image tests after build"
+            required: false
+            default: true
+env:
+  default_custom_tag: "ghcr.io/${{ github.repository_owner }}/opensearch:${{ inputs.open-search-tag }}-custom-patches"
+jobs:
+  build-and-push-docker:
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Checkout openserch-project/opensearch-build"
+        uses: actions/checkout@v5
+        with:
+          repository: opensearch-project/opensearch-build
+          ref: main
+          path: opensearch-build
+      - name: "Download OpenSearch build artifacts"
+        uses: actions/download-artifact@v6
+        with:
+          name: opensearch-build-artifacts-*
+          path: ${{ github.workspace }}/opensearch-build/tar/dist/
+      - name: "Find the OpenSearch tarball"
+        id: find-tarball
+        run: |
+          TARFILE=$(find "${GITHUB_WORKSPACE}/opensearch-build/tar/dist/" -name 'opensearch-*.tar.gz' | sort | paste -sd, -)
+          if [ -z "$TARFILE" ]; then
+            echo "Error: OpenSearch tarball not found!"
+            exit 1
+          fi
+          echo "TARFILE=$TARFILE" >> $GITHUB_ENV
+      - name: "Setup QEMU"
+        uses: docker/setup-qemu-action@v3
+        with:
+          platforms: all
+      - name: "Set up Docker Buildx"
+        uses: docker/setup-buildx-action@v3
+      - name: "Login to GitHub Container Registry"
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.repository_owner }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: "Build and push Docker image"
+        run: |
+          cd ${GITHUB_WORKSPACE}/opensearch-build/docker/release
+          chmod +x ./build-image-multi-arch.sh
+          ./build-image-multi-arch.sh -v ${{ inputs.open-search-tag }} -f ./dockerfiles/opensearch.al2.dockerfile -p opensearch -a "arm64,x64" -t ${{ env.TARFILE }} -r ghcr.io/${{ github.repository_owner }}/opensearch
+      - name: "Push default tag"
+        run: |
+          docker pull ghcr.io/${{ github.repository_owner }}/opensearch:${{ inputs.open-search-tag }}
+          docker tag ghcr.io/${{ github.repository_owner }}/opensearch:${{ inputs.open-search-tag }} ${{ env.default_custom_tag }}
+          docker push ${{ env.default_custom_tag }}
+
+  docker-image-tests:
+    name: "${{ matrix.platform.architecture }} Docker Image Tests"
+    needs: build-and-push-docker
+    strategy:
+      fail-fast: false
+      matrix:
+        platform:
+          - name: ubuntu-24.04-arm
+            architecture: arm64
+          - name: ubuntu-latest
+            architecture: amd64
+    runs-on: ubuntu-latest
+    steps:
+      - name: "Pull and test Docker image"
+        run: |
+          if [ "${{ inputs.docker-test }}" != "true" ]; then
+            echo "Docker tests are disabled. Skipping."
+            exit 0
+          fi
+          echo "Running tests on Docker image ${{ env.default_custom_tag }}..."
+          docker run -d --rm --name ops-test -p 9200:9200 -p 9600:9600 -e OPENSEARCH_INITIAL_ADMIN_PASSWORD=InItIaL$tr0ngPa$$w0rd -e "discovery.type=single-node" ${{ env.default_custom_tag }}
+          sleep 120
+          docker logs ops-test | grep "Cluster health status changed from \[YELLOW\] to \[GREEN\]"
+          echo "Docker image test passed successfully."
+          docker stop ops-test

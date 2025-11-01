@@ -178,7 +178,7 @@ jobs:
     #         architecture: arm64
     #       - name: ubuntu-latest
     #         architecture: x64
-    name: "Build and push Docker image for OpenSearch on ${{ matrix.platform.architecture }}"
+    # name: "Build and push Docker image for OpenSearch on ${{ matrix.platform.architecture }}"
     needs: build-in-docker
     runs-on: ubuntu-latest
     steps:
@@ -191,7 +191,7 @@ jobs:
       - name: "Download OpenSearch build artifacts"
         uses: actions/download-artifact@v6
         with:
-          name: opensearch-build-artifacts-${{ matrix.platform.architecture }}
+          name: opensearch-build-artifacts-* # ${{ matrix.platform.architecture }}
           path: ${{ github.workspace }}/opensearch-build/tar/dist/
       - name: "Find the OpenSearch tarball"
         id: find-tarball
@@ -202,12 +202,12 @@ jobs:
             exit 1
           fi
           echo "TARFILE=$TARFILE" >> $GITHUB_ENV
-      - name: "Set up Docker Buildx"
-        uses: docker/setup-buildx-action@v3
       - name: "Setup QEMU"
         uses: docker/setup-qemu-action@v3
         with:
           platforms: all
+      - name: "Set up Docker Buildx"
+        uses: docker/setup-buildx-action@v3
       - name: "Login to GitHub Container Registry"
         uses: docker/login-action@v3
         with:
@@ -260,7 +260,7 @@ jobs:
             exit 0
           fi
           echo "Running tests on Docker image ${{ env.default_custom_tag }}..."
-          docker run -d --rm --name ops-test -p 9200:9200 -p 9600:9600 -e OPENSEARCH_INITIAL_ADMIN_PASSWORD=InItIaL$tr0ngPa$$w0rd -e "discovery.type=single-node" ${{ env.default_custom_tag }}-${{ matrix.platform.architecture }}
+          docker run -d --rm --name ops-test -p 9200:9200 -p 9600:9600 -e OPENSEARCH_INITIAL_ADMIN_PASSWORD=InItIaL$tr0ngPa$$w0rd -e "discovery.type=single-node" ${{ env.default_custom_tag }}
           sleep 120
           docker logs ops-test | grep "Cluster health status changed from \[YELLOW\] to \[GREEN\]"
           echo "Docker image test passed successfully."

@@ -167,6 +167,9 @@ jobs:
           echo "Triggering opensearch integration tests..."
           docker exec --user ci-runner ci-docker bash -c "cd /home/ci-runner/opensearch-build && mv -rf tar/* . && ./test.sh integ-test manifests/${{ inputs.open-search-tag }}/opensearch-${{ inputs.open-search-tag }}-test.yml"
   build-and-push-docker:
+    permissions:
+      contents: read
+      packages: write
     uses: testpatchesorg/opensearch-patches/.github/workflows/docker-build.yaml@re-workflow
     needs: build-in-docker
     with:

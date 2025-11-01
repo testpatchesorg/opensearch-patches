@@ -31,7 +31,7 @@ jobs:
       - name: "Download OpenSearch build artifacts"
         uses: actions/download-artifact@v6
         with:
-          name: opensearch-build-artifacts-*
+          pattern: opensearch-build-artifacts-*
           path: ${{ github.workspace }}/opensearch-build/tar/dist/
       - name: "Find the OpenSearch tarball"
         id: find-tarball

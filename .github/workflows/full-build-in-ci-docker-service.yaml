@@ -218,12 +218,18 @@ jobs:
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: "Tag and push additional Docker tags"
         run: |
+          platform=""
+          if [ "${{ matrix.platform.architecture }}" = "arm64" ]; then
+            platform="linux/arm64"
+          else
+            platform="linux/amd64"
+          fi
           docker tag opensearchproject/opensearch:${{ inputs.open-search-tag }} ${{ env.default_custom_tag }}
-          docker push ${{ env.default_custom_tag }}
+          docker push --platform $platform ${{ env.default_custom_tag }}
           IFS=',' read -r -a TAGS_ARRAY <<< "${{ inputs.tags }}"
           for TAG in "${TAGS_ARRAY[@]}"; do
-            docker tag opensearchproject/opensearch:${{ inputs.open-search-tag }} ghcr.io/${{ github.repository_owner }}/opensearch:$TAG-${{ matrix.platform.architecture }}
-            docker push ghcr.io/${{ github.repository_owner }}/opensearch:$TAG-${{ matrix.platform.architecture }}
+            docker tag opensearchproject/opensearch:${{ inputs.open-search-tag }} ghcr.io/${{ github.repository_owner }}/opensearch:$TAG
+            docker push --platform $platform ghcr.io/${{ github.repository_owner }}/opensearch:$TAG
           done
   docker-image-tests:
     name: "Docker Image Tests"

@@ -1,7 +1,7 @@
 ---
 
 name: "Build OpenSearch in CI Docker"
-run-name: "OpenSearch ${{ inputs.open-search-tag }}with Custom Patches from ${{ inputs.patches-dir}}"
+run-name: "OpenSearch ${{ inputs.open-search-tag }} with Custom Patches from ${{ inputs.patches-dir}}"
 on:
   workflow_dispatch:
     inputs:

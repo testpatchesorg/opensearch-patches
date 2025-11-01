@@ -222,7 +222,7 @@ jobs:
           docker push ${{ env.default_custom_tag }}
           IFS=',' read -r -a TAGS_ARRAY <<< "${{ inputs.tags }}"
           for TAG in "${TAGS_ARRAY[@]}"; do
-            docker tag opensearch:${{ inputs.open-search-tag }} ghcr.io/${{ github.repository_owner }}/opensearch:$TAG-${{ matrix.platform.architecture }}
+            docker tag opensearchproject/opensearch:${{ inputs.open-search-tag }} ghcr.io/${{ github.repository_owner }}/opensearch:$TAG-${{ matrix.platform.architecture }}
             docker push ghcr.io/${{ github.repository_owner }}/opensearch:$TAG-${{ matrix.platform.architecture }}
           done
   docker-image-tests:

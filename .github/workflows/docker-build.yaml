@@ -59,7 +59,7 @@ jobs:
         run: |
           cd ${GITHUB_WORKSPACE}/opensearch-build/docker/release
           chmod +x ./build-image-multi-arch.sh
-          ./build-image-multi-arch.sh -v ${{ inputs.open-search-tag }} -f ./dockerfiles/opensearch.al2.dockerfile -p opensearch -a "arm64,x64" -t ${{ env.TARFILE }} -r ghcr.io/${{ github.repository_owner }}/opensearch
+          ./build-image-multi-arch.sh -v ${{ inputs.open-search-tag }} -f ./dockerfiles/opensearch.al2.dockerfile -p opensearch -a "arm64,x64" -t "${{ env.TARFILE }}" -r ghcr.io/${{ github.repository_owner }}/opensearch
       - name: "Push default tag"
         run: |
           docker pull ghcr.io/${{ github.repository_owner }}/opensearch:${{ inputs.open-search-tag }}

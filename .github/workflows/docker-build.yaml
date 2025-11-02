@@ -57,6 +57,7 @@ jobs:
       - name: "Build and push Docker image"
         run: |
           cd ${GITHUB_WORKSPACE}/opensearch-build/docker/release
+          sed -i 's/TARBALL=`realpath $OPTARG`/TARBALL=`realpath -z $OPTARG`/' ./build-image-multi-arch.sh
           chmod +x ./build-image-multi-arch.sh
           ./build-image-multi-arch.sh -v ${{ inputs.open-search-tag }} -f ./dockerfiles/opensearch.al2.dockerfile -p opensearch -a "arm64,x64" -t "${{ env.TARFILE }}" -r ghcr.io/${{ github.repository_owner }}/opensearch
       - name: "Push default tag"

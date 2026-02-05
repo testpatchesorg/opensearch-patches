@@ -28,7 +28,12 @@ jobs:
         shell: bash
         run: |
           ./gradlew assemble --parallel --no-build-cache -PDISABLE_BUILD_CACHE
-      - name: Serach for opensearch artifacts
-        run: |
-          find . -name *.tar
-          find . -name *.zip
+#      - name: Serach for opensearch artifacts
+#        run: |
+#          tars=$(find . -name *.tar  | xargs)
+#          echo "tar_files=${tars}" >> $GITHUB_ENV
+      - name: Upload
+        uses: actions/upload-artifact@v6.0.0
+        with:
+          path: **/*.tar
+          name: opensearch-${{ matrix.java }}-${{ matrix.os }}

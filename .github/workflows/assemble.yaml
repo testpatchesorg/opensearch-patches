@@ -1,0 +1,30 @@
+name: Gradle Assemble
+on: [workflow_dispatch]
+
+jobs:
+  assemble:
+    # if: github.repository == 'opensearch-project/OpenSearch'
+    runs-on: ${{ matrix.os }}
+    strategy:
+      matrix:
+        java: [ 21, 25 ]
+        os: [ubuntu-latest, ubuntu-24.04-arm]
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          repository: opensearch-project/OpenSearch
+      # https://github.com/actions/runner-images/issues/2840#issuecomment-790492173
+      - name: Remove unnecessary files Linux
+        if: ${{ runner.os == 'Linux' }}
+        run: |
+          sudo rm -rf /usr/share/dotnet
+          sudo rm -rf "$AGENT_TOOLSDIRECTORY"
+      - name: Set up JDK ${{ matrix.java }}
+        uses: actions/setup-java@v5
+        with:
+          java-version: ${{ matrix.java }}
+          distribution: temurin
+      - name: Run Gradle (assemble)
+        shell: bash
+        run: |
+          ./gradlew assemble --parallel --no-build-cache -PDISABLE_BUILD_CACHE

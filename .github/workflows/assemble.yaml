@@ -35,5 +35,5 @@ jobs:
       - name: Upload
         uses: actions/upload-artifact@v6.0.0
         with:
-          path: **/*.tar
+          path: ./**/*.tar
           name: opensearch-${{ matrix.java }}-${{ matrix.os }}

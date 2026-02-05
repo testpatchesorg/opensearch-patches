@@ -28,3 +28,7 @@ jobs:
         shell: bash
         run: |
           ./gradlew assemble --parallel --no-build-cache -PDISABLE_BUILD_CACHE
+      - name: Serach for opensearch artifacts
+        run: |
+          find . -name *.tgz
+          tree

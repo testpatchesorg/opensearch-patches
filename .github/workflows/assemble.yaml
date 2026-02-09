@@ -26,8 +26,8 @@ jobs:
           OPENSEARCH_VERSION=${{ inputs.opensearch-tag }}-patched
           echo "ARCH: ${{ runner.arch }}"
           ARCH=${{ runner.arch }}
-          echo "Full tag: ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${$ARCH,,}"
-          FULL_TAG="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${$ARCH,,}"
+          echo "Full tag: ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${ARCH,,}"
+          FULL_TAG="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${ARCH,,}"
 
       - uses: actions/checkout@v6
         with:
@@ -72,7 +72,7 @@ jobs:
           echo "ARCH: ${{ runner.arch }}"
           ARCH=${{ runner.arch }}
           
-          echo "Full tag: ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${$ARCH,,}"
-          FULL_TAG="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${$ARCH,,}"
+          echo "Full tag: ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${ARCH,,}"
+          FULL_TAG="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${ARCH,,}"
           docker tag opensearch:test ${FULL_TAG}
           docker push ${FULL_TAG}

@@ -1,0 +1,17 @@
+diff --git a/README.md b/README.md
+index 331d283ef95..867c2801ec0 100644
+--- a/README.md
++++ b/README.md
+@@ -16,6 +16,7 @@
+ - [License](#license)
+ - [Copyright](#copyright)
+ - [Trademark](#trademark)
++- [Additional line to test patch application](#additional-line-to-test-patch-application)
+ 
+ ## Welcome!
+ 
+@@ -55,3 +56,4 @@ OpenSearch is a registered trademark of LF Projects, LLC.
+ 
+ OpenSearch includes certain Apache-licensed Elasticsearch code from Elasticsearch B.V. and other source code. Elasticsearch B.V. is not the source of that other source code. ELASTICSEARCH is a registered trademark of Elasticsearch B.V.
+ 
++## Additional line to test patch application

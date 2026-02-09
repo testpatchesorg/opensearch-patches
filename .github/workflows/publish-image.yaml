@@ -37,15 +37,22 @@ jobs:
           echo "Repository owner: ${GITHUB_REPOSITORY_OWNER,,}"
           
           echo "OPENSEARCH_VERSION: ${OPENSEARCH_VERSION}"
+          declare -A images
+          manifest_command=""
+          FULL_TAG="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}"
           for image_file in $(find ./ -name opensearch*.tar); do
             docker load -i ${image_file}
             ARCH=$(docker image inspect opensearch:test --format '{{.Architecture}}')
-            FULL_TAG="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}"
             FULL_TAG_ARCH="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${ARCH,,}"
+            images["$ARCH"]="$FULL_TAG_ARCH"
             echo "Full tag: ${FULL_TAG_ARCH}"
             docker tag opensearch:test ${FULL_TAG_ARCH}
             docker push ${FULL_TAG_ARCH}
-            docker manifest annotate --arch ${ARCH} ${FULL_TAG} ${FULL_TAG_ARCH}
+            manifest_command="${manifest_command} --amend ${FULL_TAG_ARCH}"
+          done
+          docker manifest create ${FULL_TAG} ${manifest_command}
+          for key in ${!images[@]}; do
+            docker manifest annotate --arch ${key} ${FULL_TAG} ${images["$key"]}
           done
           docker manifest push ${FULL_TAG}
          

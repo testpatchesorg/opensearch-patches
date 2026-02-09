@@ -7,6 +7,16 @@ on:
         default: "3.0.0"
         required: true
         description: Opensearch version (tag)
+      patches-dir:
+        type: string
+        default: "patches/3.0.0"
+        required: true
+        description: Path to patches
+      target-branch:
+        type: string
+        default: "main"
+        required: true
+        description: Qubership-Opensearch target branch
       trigger-qubership-opensearch-build:
         type: boolean
         description: "Trigger qubership-opensearch build"
@@ -41,6 +51,18 @@ jobs:
         with:
           repository: opensearch-project/OpenSearch
           ref: ${{ inputs.opensearch-tag }}
+      - uses: actions/checkout@v6
+        with:
+          path: qubership-patches
+      - name: Apply patches
+        run: |
+          cd ${GITHUB_WORKSPACE}
+          for p in ./qubership-patches/${{ inputs.patches-dir }}/*.patch; do
+            echo "Applying $p…"
+            git apply -p1 --ignore-space-change --ignore-whitespace "$p"
+          done
+          rm -rf ./qubership-patches
+
       # https://github.com/actions/runner-images/issues/2840#issuecomment-790492173
       - name: Remove unnecessary files Linux
         if: ${{ runner.os == 'Linux' }}

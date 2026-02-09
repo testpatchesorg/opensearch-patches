@@ -61,24 +61,40 @@ jobs:
         uses: actions/upload-artifact@v6.0.0
         with:
           path: ./**/*.tar
-          name: opensearch-${{ matrix.java }}-${{ matrix.os }}
+          name: opensearch-java-${{ matrix.java }}-${{ runner.arch }}
 
+  publish-docker:
+    needs: [assemble]
+    permissions:
+      contents: read
+      packages: write
+    runs-on: ubuntu-latest
+    steps:
       - name: Login to ghcr.io
         uses: docker/login-action@v3.7.0
         with:
           registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      
+      - name: Download tars
+        uses: actions/download-artifact@v7.0.0
+        with:
+          pattern: "*"
+
       - name: Load Docker image from tar
         shell: bash
         run: |
-          image=$(find ./distribution/docker/build -name opensearch*.tar -print -quit)
-          docker load -i ${image}
-          echo "Repository owner: ${GITHUB_REPOSITORY_OWNER,,}"
-          echo "OPENSEARCH_VERSION: ${{ inputs.opensearch-tag }}-patched"
-          OPENSEARCH_VERSION=${{ inputs.opensearch-tag }}-patched
-          echo "ARCH: ${{ runner.arch }}"
-          ARCH=${{ runner.arch }}
+          for image_file in $(find ./ -name opensearch*.tar); do
+            docker load -i ${image_file}
+            docker image inspect opensearch:test | grep Architecture
+
+          done
+            echo "Repository owner: ${GITHUB_REPOSITORY_OWNER,,}"
+            echo "OPENSEARCH_VERSION: ${{ inputs.opensearch-tag }}-patched"
+            OPENSEARCH_VERSION=${{ inputs.opensearch-tag }}-patched
+            echo "ARCH: ${{ runner.arch }}"
+            ARCH=${{ runner.arch }}
           
           echo "Full tag: ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${ARCH,,}"
           FULL_TAG="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${ARCH,,}"

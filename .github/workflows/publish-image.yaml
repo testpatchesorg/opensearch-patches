@@ -1,7 +1,12 @@
 name: Create multiarch image
 on:
-  workflow_dispatch: {}
-
+  workflow_dispatch:
+    inputs:
+      opensearch-tag:
+        type: string
+        default: "3.0.0"
+        required: true
+        description: Opensearch version (tag)
 
 jobs:
   publish-docker:
@@ -26,9 +31,11 @@ jobs:
 
       - name: Load Docker image from tar
         shell: bash
+        env:
+          OPENSEARCH_VERSION: "${{ inputs.opensearch-tag || '3.0.0' }}-patched"
         run: |
           echo "Repository owner: ${GITHUB_REPOSITORY_OWNER,,}"
-          OPENSEARCH_VERSION=${{ inputs.opensearch-tag }}-patched
+          
           echo "OPENSEARCH_VERSION: ${OPENSEARCH_VERSION}"
           for image_file in $(find ./ -name opensearch*.tar); do
             docker load -i ${image_file}

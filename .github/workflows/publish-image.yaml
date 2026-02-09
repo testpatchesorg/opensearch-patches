@@ -27,18 +27,19 @@ jobs:
       - name: Load Docker image from tar
         shell: bash
         run: |
+          echo "Repository owner: ${GITHUB_REPOSITORY_OWNER,,}"
+          OPENSEARCH_VERSION=${{ inputs.opensearch-tag }}-patched
+          echo "OPENSEARCH_VERSION: ${OPENSEARCH_VERSION}"
           for image_file in $(find ./ -name opensearch*.tar); do
             docker load -i ${image_file}
-            docker image inspect opensearch:test --format '{{.Architecture}}'
+            ARCH=$(docker image inspect opensearch:test --format '{{.Architecture}}')
+            FULL_TAG="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}"
+            FULL_TAG_ARCH="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${ARCH,,}"
+            echo "Full tag: ${FULL_TAG_ARCH}"
+            docker tag opensearch:test ${FULL_TAG_ARCH}
+            docker push ${FULL_TAG_ARCH}
+            docker manifest annotate --arch ${ARCH} ${FULL_TAG} ${FULL_TAG_ARCH}
           done
-            echo "Repository owner: ${GITHUB_REPOSITORY_OWNER,,}"
-            echo "OPENSEARCH_VERSION: ${{ inputs.opensearch-tag }}-patched"
-            OPENSEARCH_VERSION=${{ inputs.opensearch-tag }}-patched
-            echo "ARCH: ${{ runner.arch }}"
-            ARCH=${{ runner.arch }}
-          
-          echo "Full tag: ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${ARCH,,}"
-          FULL_TAG="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${ARCH,,}"
-          # echo "CUSTOM_TAG=${FULL_TAG}" >> $GITHUB_ENV
-          # docker tag opensearch:test ${FULL_TAG}
-          # docker push ${FULL_TAG}
+          docker manifest push ${FULL_TAG}
+         
+          echo "CUSTOM_TAG=${FULL_TAG}" >> $GITHUB_ENV

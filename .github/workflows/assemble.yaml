@@ -84,26 +84,36 @@ jobs:
 
       - name: Load Docker image from tar
         shell: bash
+        env:
+          OPENSEARCH_VERSION: "${{ inputs.opensearch-tag || '3.0.0' }}-patched"
         run: |
+          echo "Repository owner: ${GITHUB_REPOSITORY_OWNER,,}"
+          
+          echo "OPENSEARCH_VERSION: ${OPENSEARCH_VERSION}"
+          declare -A images
+          manifest_command=""
+          FULL_TAG="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}"
           for image_file in $(find ./ -name opensearch*.tar); do
             docker load -i ${image_file}
-            docker image inspect opensearch:test | grep Architecture
-
+            ARCH=$(docker image inspect opensearch:test --format '{{.Architecture}}')
+            FULL_TAG_ARCH="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${ARCH,,}"
+            images["$ARCH"]="$FULL_TAG_ARCH"
+            echo "Full tag: ${FULL_TAG_ARCH}"
+            docker tag opensearch:test ${FULL_TAG_ARCH}
+            docker push ${FULL_TAG_ARCH}
+            manifest_command="${manifest_command} --amend ${FULL_TAG_ARCH}"
           done
-            echo "Repository owner: ${GITHUB_REPOSITORY_OWNER,,}"
-            echo "OPENSEARCH_VERSION: ${{ inputs.opensearch-tag }}-patched"
-            OPENSEARCH_VERSION=${{ inputs.opensearch-tag }}-patched
-            echo "ARCH: ${{ runner.arch }}"
-            ARCH=${{ runner.arch }}
-          
-          echo "Full tag: ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${ARCH,,}"
-          FULL_TAG="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${ARCH,,}"
+          docker manifest create ${FULL_TAG} ${manifest_command}
+          for key in ${!images[@]}; do
+            docker manifest annotate --arch ${key} ${FULL_TAG} ${images["$key"]}
+          done
+          docker manifest push ${FULL_TAG}
+         
           echo "CUSTOM_TAG=${FULL_TAG}" >> $GITHUB_ENV
-          docker tag opensearch:test ${FULL_TAG}
-          docker push ${FULL_TAG}
+
       - name: "Trigger ${{ github.event.repository.name }}/qubership-opensearch build"
         if: ${{ inputs.trigger-qubership-opensearch-build }}
-        uses: netcracker/qubership-workflow-hub/actions/custom-event@v2.0.1
+        uses: netcracker/qubership-workflow-hub/actions/custom-event@v2.0.10
         with:
           github-token: ${{ secrets.GH_ACCESS_TOKEN }}
           owner: ${{ github.repository_owner }}

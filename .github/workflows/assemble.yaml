@@ -10,6 +10,9 @@ on:
 
 jobs:
   assemble:
+    permissions:
+      contents: read
+      packages: write
     # if: github.repository == 'opensearch-project/OpenSearch'
     runs-on: ${{ matrix.os }}
     strategy:

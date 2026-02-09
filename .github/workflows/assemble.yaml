@@ -7,6 +7,11 @@ on:
         default: "3.0.0"
         required: true
         description: Opensearch version (tag)
+      trigger-qubership-opensearch-build:
+        type: boolean
+        description: "Trigger qubership-opensearch build"
+        default: true
+        required: false
 
 jobs:
   assemble:
@@ -77,5 +82,15 @@ jobs:
           
           echo "Full tag: ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${ARCH,,}"
           FULL_TAG="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${ARCH,,}"
+          echo "CUSTOM_TAG=${FULL_TAG}" >> $GITHUB_ENV
           docker tag opensearch:test ${FULL_TAG}
           docker push ${FULL_TAG}
+      - name: "Trigger ${{ github.event.repository.name }}/qubership-opensearch build"
+        if: ${{ inputs.trigger-qubership-opensearch-build }}
+        uses: netcracker/qubership-workflow-hub/actions/custom-event@v2.0.1
+        with:
+          github-token: ${{ secrets.GH_ACCESS_TOKEN }}
+          owner: ${{ github.repository_owner }}
+          repo: qubership-opensearch
+          event-type: opensearch-patched-build
+          client-payload: '{"custom_opensearch_version": "${{ env.CUSTOM_TAG }}", "target_branch": "main", "opensearch_tag": "${{ inputs.opensearch-tag }}"}'

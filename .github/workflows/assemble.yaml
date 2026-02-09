@@ -37,11 +37,6 @@ jobs:
         run: |
           ./gradlew assemble --parallel --no-build-cache -PDISABLE_BUILD_CACHE
 
-      - name: Set env
-        run: |
-          echo "OPENSEARCH_VERSION=${{ inputs.opensearch-tag }}-patched" >> $GITHUB_ENV
-          echo "ARCH=${{ runner.arch }}" >> $GITHUB_ENV
-
       - name: Upload
         uses: actions/upload-artifact@v6.0.0
         with:
@@ -59,5 +54,11 @@ jobs:
         run: |
           image=$(find ./distribution/docker/build -name opensearch*.tar -print -quit)
           docker load -i ${image}
-          docker tag opensearch:test ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${$ARCH}
-          docker push ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${$ARCH}
+          echo "OPENSEARCH_VERSION: ${{ inputs.opensearch-tag }}-patched"
+          OPENSEARCH_VERSION=${{ inputs.opensearch-tag }}-patched
+          echo "ARCH: ${{ runner.arch }}"
+          ARCH=${{ runner.arch }}
+          echo "Full tag: ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${$ARCH}"
+          FULL_TAG="ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/opensearch:${OPENSEARCH_VERSION}-${$ARCH}"
+          docker tag opensearch:test ${FULL_TAG}
+          docker push ${FULL_TAG}

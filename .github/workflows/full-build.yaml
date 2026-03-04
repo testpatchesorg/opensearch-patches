@@ -113,7 +113,7 @@ jobs:
         uses: actions/checkout@v5
         with:
           repository: opensearch-project/opensearch-build
-          ref: main
+          ref: ${{ inputs.open-search-tag }}
           path: opensearch-build
       - name: "Modify build configuration to use patched OpenSearch"
         run: |
@@ -219,3 +219,4 @@ jobs:
           repo: qubership-opensearch
           event-type: opensearch-patched-build
           client-payload: '{"custom_opensearch_version": "${{ env.default_custom_tag }}"}'
+

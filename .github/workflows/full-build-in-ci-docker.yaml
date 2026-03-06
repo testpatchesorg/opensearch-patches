@@ -168,14 +168,22 @@ jobs:
           docker exec --user ci-runner ci-docker bash -c "cd /home/ci-runner && chmod +x /home/ci-runner/run-build.sh && /home/ci-runner/run-build.sh"
       - name: Copy build artifacts from container
         run: |
-          mkdir -p ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.platform.architecture }}
-          docker cp ci-docker:/home/ci-runner/opensearch-build/tar/dist/opensearch/. ${GITHUB_WORKSPACE}/build-artifacts/${{ matrix.platform.architecture }}/
+          mkdir -p ${GITHUB_WORKSPACE}/tar
+          mkdir -p ${GITHUB_WORKSPACE}/dist
+          docker cp ci-docker:/home/ci-runner/opensearch-build/tar/ ${GITHUB_WORKSPACE}/tar
+          docker cp ci-docker:/home/ci-runner/opensearch-build/dist/ ${GITHUB_WORKSPACE}/dist
       - name: Upload OpenSearch build artifacts
         uses: actions/upload-artifact@v5
         with:
-          name: opensearch-build-artifacts-${{ matrix.platform.architecture }}
+          name: opensearch-tar-${{ matrix.platform.architecture }}
           path: |
-            ${{ github.workspace }}/build-artifacts/${{ matrix.platform.architecture }}/*.tar.gz
+            ${{ github.workspace }}/tar
+      - name: Upload OpenSearch build artifacts
+        uses: actions/upload-artifact@v5
+        with:
+          name: opensearch-dist-${{ matrix.platform.architecture }}
+          path: |
+            ${{ github.workspace }}/dist
       # - name: Execute integration tests (optional)
       #   continue-on-error: true
       #   if: ${{ inputs.integration-tests == true || github.event_name == 'schedule' }}
@@ -215,12 +223,15 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v7
         with:
-          name: "opensearch-build-artifacts-${{ matrix.platform.architecture }}"
+          pattern: "*-${{ matrix.platform.architecture }}"
+          path: ${{ github.workspace }}/artifacts
+          merge-multiple:
       - name: Copy artifacts into container
         run: |
+          ls -laR ./artifacts
           docker exec --user ci-runner ci-docker bash -c  "cd /home/ci-runner && git clone -b ${{ env.OPEN_SEARCH_TAG }} https://github.com/opensearch-project/opensearch-build.git"
-          docker exec --user ci-runner ci-docker bash -c  "mkdir -p /home/ci-runner/opensearch-build/tar/dist/opensearch"
-          docker cp ./opensearch-*.tar.gz ci-docker:/home/ci-runner/opensearch-build/tar/dist/opensearch/
+          # docker exec --user ci-runner ci-docker bash -c  "mkdir -p /home/ci-runner/opensearch-build"
+          docker cp ${{ github.workspace }}/artifacts/ ci-docker:/home/ci-runner/opensearch-build/
 
       - name: Execute integration tests (optional)
         continue-on-error: true
@@ -233,7 +244,7 @@ jobs:
     permissions:
       contents: read
       packages: write
-    uses: netcracker/opensearch-patches/.github/workflows/re-docker-build.yaml@main
+    uses: testpatchesorg/opensearch-patches/.github/workflows/re-docker-build.yaml@main
     needs: [build-in-docker, apply-patches]
     with:
       custom-tag: ${{ needs.apply-patches.outputs.custom-tag }}

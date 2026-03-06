@@ -171,7 +171,6 @@ jobs:
           mkdir -p ${GITHUB_WORKSPACE}/tar
           mkdir -p ${GITHUB_WORKSPACE}/dist
           docker cp ci-docker:/home/ci-runner/opensearch-build/tar/ ${GITHUB_WORKSPACE}/tar
-          # docker cp ci-docker:/home/ci-runner/opensearch-build/dist/ ${GITHUB_WORKSPACE}/dist
       - name: Upload OpenSearch build artifacts
         uses: actions/upload-artifact@v5
         with:

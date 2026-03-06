@@ -225,7 +225,7 @@ jobs:
         with:
           pattern: "*-${{ matrix.platform.architecture }}"
           path: ${{ github.workspace }}/artifacts
-          merge-multiple:
+          merge-multiple: true
       - name: Copy artifacts into container
         run: |
           ls -laR ./artifacts

@@ -218,6 +218,7 @@ jobs:
           name: "opensearch-build-artifacts-${{ matrix.platform.architecture }}"
       - name: Copy artifacts into container
         run: |
+          docker exec --user ci-runner ci-docker bash -c  "cd /home/ci-runner && git clone -b ${{ env.OPEN_SEARCH_TAG }} https://github.com/opensearch-project/opensearch-build.git"
           docker exec --user ci-runner ci-docker bash -c  "mkdir -p /home/ci-runner/opensearch-build/tar/dist/opensearch"
           docker cp ./opensearch-*.tar.gz ci-docker:/home/ci-runner/opensearch-build/tar/dist/opensearch/
 

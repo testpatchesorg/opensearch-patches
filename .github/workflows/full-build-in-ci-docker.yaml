@@ -215,7 +215,7 @@ jobs:
       - name: Download artifacts
         uses: actions/download-artifact@v7
         with:
-          name: "*-${{ matrix.platform.architecture }}"
+          name: "opensearch-build-artifacts-${{ matrix.platform.architecture }}"
       - name: Copy artifacts into container
         run: |
           docker cp ./opensearch-*.tar.gz ci-docker:/home/ci-runner/opensearch-build/tar/dist/opensearch/

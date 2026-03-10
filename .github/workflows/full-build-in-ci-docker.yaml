@@ -238,7 +238,8 @@ jobs:
         if: ${{ inputs.integration-tests == true || github.event_name == 'schedule' }}
         run: |
           echo "Triggering opensearch integration tests..."
-          docker exec --user ci-runner ci-docker bash -c "export JAVA_HOME=/opt/java/openjdk-21 && cd /home/ci-runner/opensearch-build && cp -r tar/* . && ./test.sh integ-test manifests/${{ env.OPEN_SEARCH_TAG }}/opensearch-${{ env.OPEN_SEARCH_TAG }}-test.yml"
+          #docker exec --user ci-runner ci-docker bash -c "export JAVA_HOME=/opt/java/openjdk-21 && cd /home/ci-runner/opensearch-build && cp -r tar/* . && ./test.sh integ-test manifests/${{ env.OPEN_SEARCH_TAG }}/opensearch-${{ env.OPEN_SEARCH_TAG }}-test.yml"
+          docker exec --user ci-runner ci-docker bash -c "export JAVA_HOME=/opt/java/openjdk-21 && cd /home/ci-runner/opensearch-build && ./test.sh integ-test manifests/${{ env.OPEN_SEARCH_TAG }}/opensearch-${{ env.OPEN_SEARCH_TAG }}-test.yml"
 
   build-and-push-docker:
     permissions:

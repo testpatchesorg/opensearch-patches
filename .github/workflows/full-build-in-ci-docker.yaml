@@ -91,9 +91,13 @@ jobs:
           git add .
           git commit -m "Applied custom patches to OpenSearch ${{ env.OPEN_SEARCH_TAG }}"
           git push origin "${{ env.custom_branch }}"
+  Get-CI-Image-Tag:
+    uses: opensearch-project/opensearch-build/.github/workflows/get-ci-image-tag.yml@main
+    with:
+      product: opensearch
 
   build-in-docker:
-    needs: apply-patches
+    needs: [apply-patches, Get-CI-Image-Tag]
     runs-on: ${{ matrix.platform.name }}
     name: "${{ matrix.platform.architecture }} Build OpenSearch on ${{ matrix.platform.name }}"
     strategy:
@@ -115,13 +119,15 @@ jobs:
           large-packages: true
           docker-images: true
           swap-storage: true
+      # - name: Start CI Docker container
+      #   run: |
+      #     docker run -d \
+      #       --name ci-docker \
+      #       opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
+      #       sleep infinity
       - name: Start CI Docker container
         run: |
-          docker run -d \
-            --name ci-docker \
-            opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
-            sleep infinity
-
+          docker run -d --name ci-docker ${{ needs.Get-CI-Image-Tag.outputs.ci-image-start-options }} ${{ needs.Get-CI-Image-Tag.outputs.ci-image-version-linux }} ${{ needs.Get-CI-Image-Tag.outputs.ci-image-start-command }}
       - name: Wait for container to be ready
         run: |
           until docker exec ci-docker true 2>/dev/null; do
@@ -194,7 +200,7 @@ jobs:
     if: ${{ inputs.integration-tests == true || github.event_name == 'schedule' }}
     permissions:
       contents: read
-    needs: [build-in-docker]
+    needs: [build-in-docker, Get-CI-Image-Tag]
     runs-on: ${{ matrix.platform.name }}
     strategy:
       fail-fast: false
@@ -207,10 +213,13 @@ jobs:
     steps:
       - name: Start CI Docker container
         run: |
-          docker run -d \
-            --name ci-docker \
-            opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
-            sleep infinity
+          docker run -d --name ci-docker ${{ needs.Get-CI-Image-Tag.outputs.ci-image-start-options }} ${{ needs.Get-CI-Image-Tag.outputs.ci-image-version-linux }} ${{ needs.Get-CI-Image-Tag.outputs.ci-image-start-command }}
+
+
+          # docker run -d \
+          #   --name ci-docker \
+          #   opensearchstaging/ci-runner:ci-runner-al2-opensearch-build-v1 \
+          #   sleep infinity
 
       - name: Wait for container to be ready
         run: |

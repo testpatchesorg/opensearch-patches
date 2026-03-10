@@ -128,7 +128,7 @@ jobs:
       - name: Start CI Docker container
         run: |
           # docker run -d --name ci-docker ${{ needs.Get-CI-Image-Tag.outputs.ci-image-start-options }} ${{ needs.Get-CI-Image-Tag.outputs.ci-image-version-linux }} ${{ needs.Get-CI-Image-Tag.outputs.ci-image-start-command }}
-          docker run -d --name ci-docker --user root ${{ needs.Get-CI-Image-Tag.outputs.ci-image-version-linux }} ${{ needs.Get-CI-Image-Tag.outputs.ci-image-start-command }}
+          docker run -d --name ci-docker --user root ${{ needs.Get-CI-Image-Tag.outputs.ci-image-version-linux }} sleep infinity
       - name: Wait for container to be ready
         run: |
           until docker exec ci-docker true 2>/dev/null; do
@@ -214,7 +214,7 @@ jobs:
     steps:
       - name: Start CI Docker container
         run: |
-          docker run -d --name ci-docker --user root ${{ needs.Get-CI-Image-Tag.outputs.ci-image-version-linux }} ${{ needs.Get-CI-Image-Tag.outputs.ci-image-start-command }}
+          docker run -d --name ci-docker --user root ${{ needs.Get-CI-Image-Tag.outputs.ci-image-version-linux }} sleep infinity
 
 
           # docker run -d \

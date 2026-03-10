@@ -166,6 +166,7 @@ jobs:
           }
           ' manifests/${{ env.OPEN_SEARCH_TAG }}/opensearch-${{ env.OPEN_SEARCH_TAG }}.yml
           ./build.sh manifests/${{ env.OPEN_SEARCH_TAG }}/opensearch-${{ env.OPEN_SEARCH_TAG }}.yml --platform linux -a ${{ matrix.platform.architecture }}
+          ls -laR tar/builds/opensearch
           ./assemble.sh tar/builds/opensearch/manifest.yml
           """ > ${GITHUB_WORKSPACE}/scripts/run-build.sh
           cat ${GITHUB_WORKSPACE}/scripts/run-build.sh
